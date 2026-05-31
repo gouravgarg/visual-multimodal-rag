@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:amplify_flutter/amplify_flutter.dart'; // 💡 Exposes AmplifyException
 import 'auth_service.dart';
+import 'register_screen.dart'; // 💡 Imports our new registration screen file
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -44,10 +46,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success && mounted) {
         widget.onLoginSuccess();
       }
+    } on AmplifyException catch (e) { 
+      // 💡 Surfaces specific AWS Cognito configuration/policy errors right onto your mobile screen
+      setState(() => _errorMessage = 'AWS Cognito: ${e.message}');
     } on HttpException catch (e) {
-      setState(() => _errorMessage = e.message);
+      setState(() => _errorMessage = 'Network Error: ${e.message}');
     } catch (e) {
-      setState(() => _errorMessage = 'An unexpected authentication error occurred. Please try again.');
+      // 💡 Fallback that forces any hidden operational exception string to print on your phone
+      setState(() => _errorMessage = 'System Exception: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -58,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Clean enterprise background tone
+      backgroundColor: const Color(0xFFF5F7FA), 
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -79,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A), // Professional Corporate Navy
+                        color: Color(0xFF1E3A8A), 
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -140,6 +146,23 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
                           : const Text('Sign In Securely', style: TextStyle(fontSize: 16)),
+                    ),
+                    const SizedBox(height: 16),
+                    // 💡 The newly integrated registration router button link element
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'New Technician? Create an Account Here',
+                        style: TextStyle(
+                          color: Color(0xFF1E3A8A), 
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),

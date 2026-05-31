@@ -46,4 +46,36 @@ class AuthService {
       return null;
     }
   }
+
+   /// Registers a new technician account in the Cognito User Pool
+  Future<bool> signUp(String email, String password) async {
+    try {
+      final userAttributes = {AuthUserAttributeKey.email: email};
+      final result = await Amplify.Auth.signUp(
+        username: email.trim(),
+        password: password,
+        options: SignUpOptions(userAttributes: userAttributes),
+      );
+      
+      // Returns true if the account needs OTP confirmation step
+      return result.nextStep.signUpStep == AuthSignUpStep.confirmSignUp;
+    } on AmplifyException catch (e) {
+      safePrint('Cognito SignUp Exception: ${e.message}');
+      rethrow;
+    }
+  }
+
+  /// Verifies the technician's email using the one-time OTP confirmation code
+  Future<bool> confirmSignUp(String email, String confirmationCode) async {
+    try {
+      final result = await Amplify.Auth.confirmSignUp(
+        username: email.trim(),
+        confirmationCode: confirmationCode.trim(),
+      );
+      return result.isSignUpComplete;
+    } on AmplifyException catch (e) {
+      safePrint('Cognito OTP Verification Exception: ${e.message}');
+      rethrow;
+    }
+  }
 }
