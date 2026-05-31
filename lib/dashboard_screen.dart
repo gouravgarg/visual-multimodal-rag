@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 import 'part_model.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -90,8 +90,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
   }
-  // Continues in Module 2...
-@override
+// Continued in Module 2...
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -163,8 +163,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-  // Continues in Module 3...
-    Widget _buildChatBubble(AgentResponse response) {
+// Continued in Module 3...
+  Widget _buildChatBubble(AgentResponse response) {
     final bool hasVoted = response.selectedPreference != 0;
 
     return Column(
@@ -198,18 +198,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      'Synthesized Agent Response',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey),
+                    const Row(
+                      children: [
+                        Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Synthesized Response',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey),
+                        ),
+                      ],
                     ),
+                    
+                    // Dynamic visual badges showing true data origin
+                    Row(
+                      children: [
+                        if (response.kbAHasData)
+                          Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('α Alpha', style: TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold)),
+                          ),
+                        if (response.kbBHasData)
+                          Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('β Beta', style: TextStyle(fontSize: 10, color: Colors.purple, fontWeight: FontWeight.bold)),
+                          ),
+                          // 💡 New Pill: Displays when BOTH KBs are false, indicating a master database hit
+                        if (!response.kbAHasData && !response.kbBHasData)
+                          Container(
+                            margin: const EdgeInsets.only(left: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('🗄️ DB Master', style: TextStyle(fontSize: 10, color: Color(0xFFE65100), fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    )
                   ],
                 ),
                 const Divider(height: 20),
-                 // 💡 Swapped out plain Text for an enterprise-grade Markdown viewer
                 MarkdownBody(
                   data: response.unifiedAnswer,
                   styleSheet: MarkdownStyleSheet(
@@ -221,47 +253,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Divider(height: 24),
                 
                 // Interactive Feedback Component
-                const Text(
-                  'Which Knowledge Base provided better source context for this answer?',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: hasVoted ? null : () => _submitVote(response, 1),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: response.selectedPreference == 1 ? Colors.green : Colors.grey.shade100,
-                          foregroundColor: response.selectedPreference == 1 ? Colors.white : Colors.black87,
-                        ),
-                        icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
-                        label: Text(
-                          response.selectedPreference == 1 ? 'Voted Base A' : 'Base Alpha',
-                          style: const TextStyle(fontSize: 11),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: hasVoted ? null : () => _submitVote(response, 2),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: response.selectedPreference == 2 ? Colors.green : Colors.grey.shade100,
-                          foregroundColor: response.selectedPreference == 2 ? Colors.white : Colors.black87,
-                        ),
-                        icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
-                        label: Text(
-                          response.selectedPreference == 2 ? 'Voted Base B' : 'Base Beta',
-                          style: const TextStyle(fontSize: 11),
-                          overflow: TextOverflow.ellipsis,
+                // 💡 ONLY render the feedback section if it's an AI Knowledge Base response
+                if (response.kbAHasData || response.kbBHasData) ...[
+                  const Text(
+                    'Which Knowledge Base provided better source context for this answer?',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: hasVoted ? null : () => _submitVote(response, 1),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: response.selectedPreference == 1 ? Colors.green : Colors.grey.shade100,
+                            foregroundColor: response.selectedPreference == 1 ? Colors.white : Colors.black87,
+                          ),
+                          icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
+                          label: Text(
+                            response.selectedPreference == 1 ? 'Voted Base A' : 'Base Alpha',
+                            style: const TextStyle(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: hasVoted ? null : () => _submitVote(response, 2),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: response.selectedPreference == 2 ? Colors.green : Colors.grey.shade100,
+                            foregroundColor: response.selectedPreference == 2 ? Colors.white : Colors.black87,
+                          ),
+                          icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
+                          label: Text(
+                            response.selectedPreference == 2 ? 'Voted Base B' : 'Base Beta',
+                            style: const TextStyle(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  // 💡 Fallback clean UI note for database entries
+                  const Row(
+                    children: [
+                      Icon(Icons.verified_user_outlined, color: Colors.green, size: 14),
+                      SizedBox(width: 6),
+                      Text(
+                        'Verified factual database record. No evaluation required.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
