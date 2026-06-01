@@ -83,26 +83,44 @@ class ApiService {
     }
   }
 
-  /// Transmits user telemetry data scoring which Knowledge Base returned an optimal solution
+  /// Transmits user feedback for answer quality and source attribution.
   Future<bool> submitAgentFeedback({
     required String originalQuery,
-    required String preferredKbId,
-    required String rejectedKbId,
+    required bool isHelpful,
+    required String kbAId,
+    required String kbBId,
+    required bool kbAHasData,
+    required bool kbBHasData,
   }) async {
-    final String apiBaseUrl = AppConfig.apiGatewayBaseUrl
+    final String feedbackApiBaseUrl = AppConfig.feedbackApiBaseUrl
         .trim()
         .replaceAll(RegExp(r'/+$'), '');
-    if (apiBaseUrl.isEmpty) return false;
+    if (feedbackApiBaseUrl.isEmpty) return false;
 
-    final Uri targetUrl = Uri.parse('$apiBaseUrl/feedback');
+    final Uri targetUrl = Uri.parse(
+      '$feedbackApiBaseUrl${AppConfig.feedbackEndpoint}',
+    );
     final String? idToken = await _authService.getActiveIdToken();
+    final String? userEmail = await _authService.getCurrentUserEmail();
 
     if (idToken == null) return false;
 
     final Map<String, dynamic> feedbackPayload = {
       'query': originalQuery,
-      'chosenKnowledgeBase': preferredKbId,
-      'omittedKnowledgeBase': rejectedKbId,
+      'question': originalQuery,
+      'userEmail': userEmail,
+      'feedback': isHelpful ? 'helpful' : 'not_helpful',
+      'isHelpful': isHelpful,
+      'sources': {
+        'alpha': {
+          'knowledgeBaseId': kbAId,
+          'hasData': kbAHasData,
+        },
+        'beta': {
+          'knowledgeBaseId': kbBId,
+          'hasData': kbBHasData,
+        },
+      },
       'timestamp': DateTime.now().toUtc().toIso8601String(),
     };
 

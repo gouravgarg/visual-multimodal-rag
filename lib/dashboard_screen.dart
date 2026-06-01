@@ -68,20 +68,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _submitVote(AgentResponse targetResponse, int preferenceChoice) async {
-    if (targetResponse.selectedPreference != 0) return;
+  Future<void> _submitFeedback(AgentResponse targetResponse, bool isHelpful) async {
+    if (targetResponse.selectedFeedback != 0) return;
 
     setState(() {
-      targetResponse.selectedPreference = preferenceChoice;
+      targetResponse.selectedFeedback = isHelpful ? 1 : 2;
     });
-
-    final preferredId = preferenceChoice == 1 ? targetResponse.kbAId : targetResponse.kbBId;
-    final rejectedId = preferenceChoice == 1 ? targetResponse.kbBId : targetResponse.kbAId;
 
     final bool success = await _apiService.submitAgentFeedback(
       originalQuery: targetResponse.query,
-      preferredKbId: preferredId,
-      rejectedKbId: rejectedId,
+      isHelpful: isHelpful,
+      kbAId: targetResponse.kbAId,
+      kbBId: targetResponse.kbBId,
+      kbAHasData: targetResponse.kbAHasData,
+      kbBHasData: targetResponse.kbBHasData,
     );
 
     if (!success && mounted) {
@@ -201,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 // Continued in Module 3...
   Widget _buildChatBubble(AgentResponse response) {
-    final bool hasVoted = response.selectedPreference != 0;
+    final bool hasSubmittedFeedback = response.selectedFeedback != 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -279,6 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const Divider(height: 20),
                 MarkdownBody(
+                  selectable: true,
                   data: response.unifiedAnswer,
                   styleSheet: MarkdownStyleSheet(
                     p: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
@@ -286,66 +287,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
                   ),
                 ),
+                const SizedBox(height: 12),
+                _buildSourceAttribution(response),
                 const Divider(height: 24),
                 
-                // Interactive Feedback Component
-                // 💡 ONLY render the feedback section if it's an AI Knowledge Base response
-                if (response.kbAHasData || response.kbBHasData) ...[
-                  const Text(
-                    'Which Knowledge Base provided better source context for this answer?',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
+                const Text(
+                  'Was this answer helpful?',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: hasSubmittedFeedback ? null : () => _submitFeedback(response, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade200,
+                          disabledForegroundColor: Colors.grey.shade500,
+                        ),
+                        icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
+                        label: Text(
+                          response.selectedFeedback == 1 ? 'Marked Helpful' : 'Helpful',
+                          style: const TextStyle(fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: hasSubmittedFeedback ? null : () => _submitFeedback(response, false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: Colors.grey.shade200,
+                          disabledForegroundColor: Colors.grey.shade500,
+                        ),
+                        icon: const Icon(Icons.thumb_down_alt_outlined, size: 14),
+                        label: Text(
+                          response.selectedFeedback == 2 ? 'Marked Not Helpful' : 'Not Helpful',
+                          style: const TextStyle(fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (!response.kbAHasData && !response.kbBHasData) ...[
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: hasVoted ? null : () => _submitVote(response, 1),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: response.selectedPreference == 1 ? Colors.green : Colors.grey.shade100,
-                            foregroundColor: response.selectedPreference == 1 ? Colors.white : Colors.black87,
-                          ),
-                          icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
-                          label: Text(
-                            response.selectedPreference == 1 ? 'Voted Base A' : 'Base Alpha',
-                            style: const TextStyle(fontSize: 11),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: hasVoted ? null : () => _submitVote(response, 2),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: response.selectedPreference == 2 ? Colors.green : Colors.grey.shade100,
-                            foregroundColor: response.selectedPreference == 2 ? Colors.white : Colors.black87,
-                          ),
-                          icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
-                          label: Text(
-                            response.selectedPreference == 2 ? 'Voted Base B' : 'Base Beta',
-                            style: const TextStyle(fontSize: 11),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ] else ...[
-                  // 💡 Fallback clean UI note for database entries
                   const Row(
                     children: [
                       Icon(Icons.verified_user_outlined, color: Colors.green, size: 14),
                       SizedBox(width: 6),
                       Text(
-                        'Verified factual database record. No evaluation required.',
+                        'Verified factual database record.',
                         style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
                       ),
                     ],
                   ),
                 ],
               ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSourceAttribution(AgentResponse response) {
+    final List<String> sources = [
+      if (response.kbAHasData) 'Alpha',
+      if (response.kbBHasData) 'Beta',
+    ];
+
+    return Row(
+      children: [
+        const Icon(Icons.source_outlined, size: 14, color: Colors.blueGrey),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            sources.isEmpty ? 'Source: DB Master' : 'Source: ${sources.join(', ')}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.blueGrey,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

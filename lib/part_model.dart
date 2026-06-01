@@ -5,7 +5,7 @@ class AgentResponse {
   final String kbBId;
   final bool kbAHasData; 
   final bool kbBHasData; 
-  int selectedPreference; 
+  int selectedFeedback; 
 
   AgentResponse({
     required this.query,
@@ -14,7 +14,7 @@ class AgentResponse {
     required this.kbBId,
     required this.kbAHasData,
     required this.kbBHasData,
-    this.selectedPreference = 0,
+    this.selectedFeedback = 0,
   });
 
   /// Decodes your live Lambda JSON keys dynamically into typed values

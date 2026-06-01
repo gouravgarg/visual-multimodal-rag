@@ -55,6 +55,21 @@ class AuthService {
     }
   }
 
+  Future<String?> getCurrentUserEmail() async {
+    try {
+      final attributes = await Amplify.Auth.fetchUserAttributes();
+      for (final attribute in attributes) {
+        if (attribute.userAttributeKey == AuthUserAttributeKey.email) {
+          return attribute.value;
+        }
+      }
+      return null;
+    } catch (e) {
+      safePrint('AuthService Error [getCurrentUserEmail]: $e');
+      return null;
+    }
+  }
+
   /// Registers a new technician account in the Cognito User Pool
   Future<bool> signUp(String email, String password) async {
     try {
