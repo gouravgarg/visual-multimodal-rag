@@ -35,8 +35,8 @@ class AuthService {
     }
   }
 
-  /// Direct type-safe lookup for the user pool JWT access token string
-  Future<String?> getActiveAccessToken() async {
+  /// Direct type-safe lookup for the user pool JWT identity token string.
+  Future<String?> getActiveIdToken() async {
     try {
       final cognitoPlugin = Amplify.Auth.getPlugin(
         AmplifyAuthCognito.pluginKey,
@@ -46,7 +46,7 @@ class AuthService {
       if (session.isSignedIn) {
         // Direct, type-safe fallback extract bypassing Identity Pool infrastructure dependencies
         final tokens = session.userPoolTokensResult.value;
-        return tokens.accessToken.raw;
+        return tokens.idToken.raw;
       }
       return null;
     } catch (e) {

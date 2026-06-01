@@ -1,9 +1,9 @@
 class AppConfig {
   /// Base API Gateway Invoke URL injected via --dart-define parameters during compilation
-  /// Fallback provided for local development environment baseline
+  /// Leave empty by default so missing configuration fails before a web fetch.
   static const String apiGatewayBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://amazonaws.com',
+    defaultValue: '',
   );
 
   /// API Route endpoints
