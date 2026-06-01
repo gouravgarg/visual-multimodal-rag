@@ -6,8 +6,8 @@ const amplifyconfig = '''{
       "awsCognitoAuthPlugin": {
         "CognitoUserPool": {
           "Default": {
-            "PoolId": "eu-north-1_cWm1NfE9m",
-            "AppClientId": "2qust5gf1fk14oam61ql03lj5v",
+            "PoolId": "eu-north-1_VCVXoBanL",
+            "AppClientId": "350do8it5is6032h56rqfis2ln",
             "Region": "eu-north-1"
           }
         }

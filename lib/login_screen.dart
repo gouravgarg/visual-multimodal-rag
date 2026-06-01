@@ -15,11 +15,14 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _usernameController = TextEditingController(
+    text: 'garg.gourav@gmail.com',
+  );
+  final _passwordController = TextEditingController(text: 'Password@123');
   final AuthService _authService = AuthService();
 
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
   String? _errorMessage;
 
   @override
@@ -46,10 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success && mounted) {
         widget.onLoginSuccess();
       }
-    } on AmplifyException catch (e) { 
+    } on AmplifyException catch (e) {
+      debugPrint('AmplifyException AUTH ERROR: ${e.message}');
       // 💡 Surfaces specific AWS Cognito configuration/policy errors right onto your mobile screen
       setState(() => _errorMessage = 'AWS Cognito: ${e.message}');
     } on HttpException catch (e) {
+      debugPrint('HttpException AUTH ERROR: ${e.message}');
       setState(() => _errorMessage = 'Network Error: ${e.message}');
     } catch (e) {
       // 💡 Fallback that forces any hidden operational exception string to print on your phone
@@ -64,13 +69,15 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), 
+      backgroundColor: const Color(0xFFF5F7FA),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Card(
             elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Form(
@@ -85,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A), 
+                        color: Color(0xFF1E3A8A),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -104,19 +111,32 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: Icon(Icons.person_outline),
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) => (value == null || value.trim().isEmpty)
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
                           ? 'Please enter your username'
                           : null,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _passwordController,
-                      obscureText: true,
+                      obscureText: !_isPasswordVisible,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) => (value == null || value.isEmpty)
                           ? 'Please enter your password'
@@ -137,29 +157,39 @@ class _LoginScreenState extends State<LoginScreen> {
                         backgroundColor: const Color(0xFF1E3A8A),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: _isLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
-                          : const Text('Sign In Securely', style: TextStyle(fontSize: 16)),
+                          : const Text(
+                              'Sign In Securely',
+                              style: TextStyle(fontSize: 16),
+                            ),
                     ),
                     const SizedBox(height: 16),
                     // 💡 The newly integrated registration router button link element
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
                         );
                       },
                       child: const Text(
-                        'New Technician? Create an Account Here',
+                        'Create an Account Here',
                         style: TextStyle(
-                          color: Color(0xFF1E3A8A), 
-                          fontWeight: FontWeight.bold, 
+                          color: Color(0xFF1E3A8A),
+                          fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
                       ),

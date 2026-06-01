@@ -90,6 +90,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
   }
+
+  void _showAboutDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        final DateTime currentDateTime = DateTime.now();
+
+        return AlertDialog(
+          title: const Text('About'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('App name: Sonalika Knowledge Agent'),
+              const SizedBox(height: 8),
+              const Text('Version: 1.0'),
+              const SizedBox(height: 8),
+              Text('Date & time: $currentDateTime'),
+              const SizedBox(height: 8),
+              const Text('Environment: Production'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 // Continued in Module 2...
   @override
   Widget build(BuildContext context) {
@@ -100,6 +132,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showAboutDialog,
+          ),
           IconButton(
             icon: const Icon(Icons.logout_outlined),
             onPressed: () async {
