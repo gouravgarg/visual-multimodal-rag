@@ -11,7 +11,7 @@ class AppConfig {
 
   static const String loginSubtitle = String.fromEnvironment(
     'LOGIN_SUBTITLE',
-    defaultValue: 'Knowledge Agent',
+    defaultValue: 'Sonalika Agent',
   );
 
   static const String appVersion = String.fromEnvironment(

@@ -21,7 +21,7 @@ Optional:
 ```bash
 --dart-define=APP_NAME="Shere Punjab Group AI"
 --dart-define=LOGIN_TITLE="Shere Punjab Group"
---dart-define=LOGIN_SUBTITLE="Knowledge Agent"
+--dart-define=LOGIN_SUBTITLE="Sonalika Agent"
 --dart-define=APP_VERSION=1.0
 --dart-define=APP_ENVIRONMENT=UAT
 --dart-define=QUERY_ENDPOINT=/query
