@@ -315,8 +315,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Container(
                             margin: const EdgeInsets.only(left: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(4)),
-                            child: const Text('🗄️ DB Master', style: TextStyle(fontSize: 10, color: Color(0xFFE65100), fontWeight: FontWeight.bold)),
+                            decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.verified_user_outlined, color: Colors.green, size: 12),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'Verified factual database record',
+                                  style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
                           ),
                       ],
                     )
@@ -332,9 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
                   ),
                 ),
-                const SizedBox(height: 12),
-                _buildSourceAttribution(response),
-                const Divider(height: 24),
+                 const Divider(height: 24),
                 
                 const Text(
                   'Was this answer helpful?',
@@ -381,19 +389,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
-                if (!response.kbAHasData && !response.kbBHasData) ...[
-                  const SizedBox(height: 12),
-                  const Row(
-                    children: [
-                      Icon(Icons.verified_user_outlined, color: Colors.green, size: 14),
-                      SizedBox(width: 6),
-                      Text(
-                        'Verified factual database record.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),
@@ -402,29 +397,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSourceAttribution(AgentResponse response) {
-    final List<String> sources = [
-      if (response.kbAHasData) 'Alpha',
-      if (response.kbBHasData) 'Beta',
-    ];
-
-    return Row(
-      children: [
-        const Icon(Icons.source_outlined, size: 14, color: Colors.blueGrey),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            sources.isEmpty ? 'Source: DB Master' : 'Source: ${sources.join(', ')}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.blueGrey,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildInputBar() {
     return Container(
