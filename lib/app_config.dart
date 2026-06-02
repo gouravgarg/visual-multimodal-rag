@@ -1,17 +1,17 @@
 class AppConfig {
   static const String appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'Sherepunjab Knowledge Agent',
+    defaultValue: 'Shere Punjab Group AI',
   );
 
   static const String loginTitle = String.fromEnvironment(
     'LOGIN_TITLE',
-    defaultValue: 'Sherepunjab Spare Parts',
+    defaultValue: 'Shere Punjab Group',
   );
 
   static const String loginSubtitle = String.fromEnvironment(
     'LOGIN_SUBTITLE',
-    defaultValue: 'Catalog Portal Authentication',
+    defaultValue: 'Knowledge Agent',
   );
 
   static const String appVersion = String.fromEnvironment(
@@ -26,7 +26,7 @@ class AppConfig {
 
   static const String emptyStateTitle = String.fromEnvironment(
     'EMPTY_STATE_TITLE',
-    defaultValue: 'Ask anything about Sherepunjab Catalogues',
+    defaultValue: 'Ask anything about SherePunjab Catalogues',
   );
 
   static const String emptyStateSubtitle = String.fromEnvironment(
