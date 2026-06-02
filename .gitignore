@@ -51,3 +51,4 @@ app.*.map.json
 .env.*
 *.env.json
 dart_defines.json
+pubspec.lock

@@ -22,6 +22,12 @@ class ApiService {
       );
     }
 
+    if (!apiBaseUrl.startsWith('https://')) {
+      throw const HttpException(
+        'Security Error: Insecure HTTP protocol detected. API_BASE_URL must use HTTPS.',
+      );
+    }
+
     final Uri targetUrl = Uri.parse('$apiBaseUrl${AppConfig.queryEndpoint}');
 
     final String? idToken = await _authService.getActiveIdToken();
@@ -96,6 +102,11 @@ class ApiService {
         .trim()
         .replaceAll(RegExp(r'/+$'), '');
     if (feedbackApiBaseUrl.isEmpty) return false;
+
+    if (!feedbackApiBaseUrl.startsWith('https://')) {
+      safePrint('Telemetry Security Error: Insecure HTTP protocol detected for FEEDBACK_API_BASE_URL. Must use HTTPS.');
+      return false;
+    }
 
     final Uri targetUrl = Uri.parse(
       '$feedbackApiBaseUrl${AppConfig.feedbackEndpoint}',

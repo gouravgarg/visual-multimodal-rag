@@ -88,4 +88,11 @@ class AppConfig {
     'INITIAL_PASSWORD',
     defaultValue: '',
   );
+
+  /// Theme style for the premium creator 'About' dialog.
+  /// Options: 'SapphirePlaque' (Concept A), 'MinimalistSeal' (Concept B), 'CyberGlow' (Concept C)
+  static const String aboutScreenStyle = String.fromEnvironment(
+    'ABOUT_SCREEN_STYLE',
+    defaultValue: 'CyberGlow',
+  );
 }

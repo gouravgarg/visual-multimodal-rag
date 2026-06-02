@@ -29,7 +29,16 @@ Optional:
 --dart-define=EMPTY_STATE_TITLE="Ask anything about Sonalika Catalogues"
 --dart-define=EMPTY_STATE_SUBTITLE="Your prompt will resolve across available knowledge repositories securely."
 --dart-define=QUERY_HINT_TEXT="Ask your technical engine question..."
+--dart-define=ABOUT_SCREEN_STYLE=SapphirePlaque # Layout options for the Premium Developer card: SapphirePlaque, MinimalistSeal, CyberGlow
 ```
+
+### Premium Developer Card Customization
+
+You can customize the 'About' dialog aesthetic via the `--dart-define=ABOUT_SCREEN_STYLE` parameter. The available styles are:
+
+1. **`SapphirePlaque`** (Default): An elegant, royal deep blue sapphire and gold card design featuring a gold shield badge, metallic gold accents, and a gold button.
+2. **`MinimalistSeal`**: A clean, modern Apple/Tesla-style white design featuring a slate SP monogram emblem, extensive whitespace, and clear border button highlights.
+3. **`CyberGlow`**: A state-of-the-art cyberpunk dark mode layout featuring glowing electric cyan gradients, futuristic neon borders, a cyberbolt badge, and glowing command-terminal link buttons.
 
 Local-only optional test credentials:
 
