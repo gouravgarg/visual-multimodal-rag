@@ -23,12 +23,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final List<AgentResponse> _chatHistory = [];
   bool _isProcessing = false;
   String? _errorMessage;
+  String? _userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserEmail();
+  }
 
   @override
   void dispose() {
     _queryController.dispose();
     _chatScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserEmail() async {
+    final String? userEmail = await _authService.getCurrentUserEmail();
+    if (!mounted) return;
+
+    setState(() {
+      _userEmail = userEmail;
+    });
   }
 
   void _scrollToBottom() {
@@ -177,25 +193,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.psychology_outlined, size: 64, color: Colors.blueGrey),
-            SizedBox(height: 16),
-            Text(
-              AppConfig.emptyStateTitle,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
-            ),
-            SizedBox(height: 8),
-            Text(
-              AppConfig.emptyStateSubtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
-            ),
+    final String greetingName = (_userEmail == null || _userEmail!.isEmpty)
+        ? 'there'
+        : _userEmail!;
+
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF05070D),
+            Color(0xFF111827),
+            Color(0xFF1E3A8A),
           ],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.auto_awesome, size: 44, color: Colors.amber),
+              const SizedBox(height: 24),
+              Text(
+                'Hi $greetingName,\nWhat do you need?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 34,
+                  height: 1.18,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                AppConfig.emptyStateSubtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFFC7D2FE),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
