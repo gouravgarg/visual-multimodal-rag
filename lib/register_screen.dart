@@ -38,6 +38,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final needsOtp = await _authService.signUp(_emailController.text, _passwordController.text);
         if (needsOtp) {
           setState(() => _isVerificationStep = true);
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Account successfully created! You can now sign in safely.')),
+            );
+            Navigator.of(context).pop(); // Head back to login panel layout automatically
+          }
         }
       } else {
         // Trigger Stage 2: OTP Passphrase Validation

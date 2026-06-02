@@ -49,8 +49,16 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
 
-      if (success && mounted) {
-        widget.onLoginSuccess();
+      if (success) {
+        if (mounted) {
+          widget.onLoginSuccess();
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _errorMessage = 'Sign-in is incomplete or failed. Please check your credentials or contact your administrator.';
+          });
+        }
       }
     } on AmplifyException catch (e) {
       debugPrint('AmplifyException AUTH ERROR: ${e.message}');
