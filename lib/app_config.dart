@@ -1,12 +1,12 @@
 class AppConfig {
   static const String appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'Sonalika Knowledge Agent',
+    defaultValue: 'Sherepunjab Knowledge Agent',
   );
 
   static const String loginTitle = String.fromEnvironment(
     'LOGIN_TITLE',
-    defaultValue: 'Sonalika Spare Parts',
+    defaultValue: 'Sherepunjab Spare Parts',
   );
 
   static const String loginSubtitle = String.fromEnvironment(
@@ -26,7 +26,7 @@ class AppConfig {
 
   static const String emptyStateTitle = String.fromEnvironment(
     'EMPTY_STATE_TITLE',
-    defaultValue: 'Ask anything about Sonalika Catalogues',
+    defaultValue: 'Ask anything about Sherepunjab Catalogues',
   );
 
   static const String emptyStateSubtitle = String.fromEnvironment(

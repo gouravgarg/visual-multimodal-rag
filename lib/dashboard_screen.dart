@@ -104,13 +104,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('App name: ${AppConfig.appName}'),
+              Text('App name: ${AppConfig.appName}'),
               const SizedBox(height: 8),
-              const Text('Version: ${AppConfig.appVersion}'),
+              Text('Version: ${AppConfig.appVersion}'),
               const SizedBox(height: 8),
               Text('Date & time: $currentDateTime'),
               const SizedBox(height: 8),
-              const Text('Environment: ${AppConfig.appEnvironment}'),
+              Text('Environment: ${AppConfig.appEnvironment}'),
             ],
           ),
           actions: [
