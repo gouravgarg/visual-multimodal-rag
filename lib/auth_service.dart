@@ -4,12 +4,6 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 class AuthService {
   /// Signs in your user pool test user account securely
   Future<bool> signIn(String username, String password) async {
-    // Add these two print statements here:
-    safePrint('=== SENDING TO COGNITO ===');
-    safePrint('Username/Email Payload: "$username"');
-    safePrint('Password Length: ${password.length} characters');
-    safePrint('==========================');
-
     try {
       final result = await Amplify.Auth.signIn(
         username: username,

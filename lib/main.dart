@@ -3,6 +3,7 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 import 'amplifyconfiguration.dart';
+import 'app_config.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -16,6 +17,13 @@ void main() async {
 }
 
 Future<bool> _configureAmplify() async {
+  if (AppConfig.cognitoUserPoolId.isEmpty ||
+      AppConfig.cognitoAppClientId.isEmpty ||
+      AppConfig.cognitoRegion.isEmpty) {
+    safePrint('Enterprise Critical Error: Cognito configuration is incomplete.');
+    return false;
+  }
+
   try {
     final authPlugin = AmplifyAuthCognito();
     await Amplify.addPlugin(authPlugin);
@@ -71,7 +79,7 @@ class _TractorCatalogAppState extends State<TractorCatalogApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Sonalika Knowledge Agent',
+      title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

@@ -45,3 +45,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .metadata
+
+# Local environment configuration
+.env
+.env.*
+*.env.json
+dart_defines.json

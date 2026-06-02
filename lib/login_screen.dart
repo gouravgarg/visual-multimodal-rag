@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart'; // 💡 Exposes AmplifyException
+import 'app_config.dart';
 import 'auth_service.dart';
 import 'register_screen.dart'; // 💡 Imports our new registration screen file
 
@@ -16,9 +17,11 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController(
-    text: 'garg.gourav@gmail.com',
+    text: AppConfig.initialUsername,
   );
-  final _passwordController = TextEditingController(text: 'Password@123');
+  final _passwordController = TextEditingController(
+    text: AppConfig.initialPassword,
+  );
   final AuthService _authService = AuthService();
 
   bool _isLoading = false;
@@ -87,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Sonalika Spare Parts',
+                      AppConfig.loginTitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,
@@ -97,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Catalog Portal Authentication',
+                      AppConfig.loginSubtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),

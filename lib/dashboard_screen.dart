@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'api_service.dart';
+import 'app_config.dart';
 import 'auth_service.dart';
 import 'part_model.dart';
 
@@ -103,13 +104,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('App name: Sonalika Knowledge Agent'),
+              const Text('App name: ${AppConfig.appName}'),
               const SizedBox(height: 8),
-              const Text('Version: 1.0'),
+              const Text('Version: ${AppConfig.appVersion}'),
               const SizedBox(height: 8),
               Text('Date & time: $currentDateTime'),
               const SizedBox(height: 8),
-              const Text('Environment: Production'),
+              const Text('Environment: ${AppConfig.appEnvironment}'),
             ],
           ),
           actions: [
@@ -128,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Sonalika Knowledge Agent', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(AppConfig.appName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         actions: [
@@ -185,12 +186,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Icon(Icons.psychology_outlined, size: 64, color: Colors.blueGrey),
             SizedBox(height: 16),
             Text(
-              'Ask anything about Sonalika Catalogues',
+              AppConfig.emptyStateTitle,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E3A8A)),
             ),
             SizedBox(height: 8),
             Text(
-              'Your prompt will resolve across available knowledge repositories securely.',
+              AppConfig.emptyStateSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
             ),
@@ -395,7 +396,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: TextField(
                 controller: _queryController,
                 decoration: InputDecoration(
-                  hintText: 'Ask your technical engine question...',
+                  hintText: AppConfig.queryHintText,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   filled: true,
                   fillColor: const Color(0xFFF1F5F9),
