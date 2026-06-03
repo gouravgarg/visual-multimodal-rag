@@ -29,7 +29,7 @@ Optional:
 --dart-define=EMPTY_STATE_TITLE="Ask anything about Sonalika Catalogues"
 --dart-define=EMPTY_STATE_SUBTITLE="Your prompt will resolve across available knowledge repositories securely."
 --dart-define=QUERY_HINT_TEXT="Ask your technical engine question..."
---dart-define=ABOUT_SCREEN_STYLE=SapphirePlaque # Layout options for the Premium Developer card: SapphirePlaque, MinimalistSeal, CyberGlow
+--dart-define=ABOUT_SCREEN_STYLE=MinimalistSeal # Layout options for the Premium Developer card: SapphirePlaque, MinimalistSeal, CyberGlow
 ```
 
 ### Premium Developer Card Customization
