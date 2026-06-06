@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 import 'app_config.dart';
+import 'log_helper.dart';
 import 'package:amplify_flutter/amplify_flutter.dart'; // 💡 Exposes safePrint
 
 class ApiService {
@@ -12,7 +13,7 @@ class ApiService {
 
   static const Duration _networkTimeout = Duration(seconds: 15);
 
-  Future<Map<String, dynamic>> searchCatalog(String searchPrompt) async {
+  Future<Map<String, dynamic>> searchCatalog(String searchPrompt, {List<String>? base64Images}) async {
     final String apiBaseUrl = AppConfig.apiGatewayBaseUrl
         .trim()
         .replaceAll(RegExp(r'/+$'), '');
@@ -39,6 +40,7 @@ class ApiService {
 
     final Map<String, dynamic> requestBody = {
       'query': searchPrompt,
+      if (base64Images != null && base64Images.isNotEmpty) 'images': base64Images,
     };
 
     try {
@@ -71,7 +73,9 @@ class ApiService {
   Map<String, dynamic> _processResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        final Map<String, dynamic> decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        saveResponseLog(decoded);
+        return decoded;
       case 401:
         throw const HttpException(
           'Unauthorized request. Session validation failed.',

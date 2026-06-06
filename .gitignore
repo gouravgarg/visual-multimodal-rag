@@ -53,3 +53,5 @@ android/key.properties
 *.env.json
 dart_defines.json
 pubspec.lock
+.antigravity
+.antigravity/*

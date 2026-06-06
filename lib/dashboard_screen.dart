@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'api_service.dart';
 import 'app_config.dart';
@@ -25,6 +28,152 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isProcessing = false;
   String? _errorMessage;
   String? _userEmail;
+
+  final ImagePicker _imagePicker = ImagePicker();
+  final List<Uint8List> _selectedImageBytes = [];
+  final List<String> _selectedImageNames = [];
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> images = await _imagePicker.pickMultiImage();
+      if (images.isEmpty) return;
+
+      int invalidCount = 0;
+      for (final image in images) {
+        final String name = image.name.toLowerCase();
+        final bool isValid = name.endsWith('.png') ||
+            name.endsWith('.jpg') ||
+            name.endsWith('.jpeg');
+
+        if (isValid) {
+          final bytes = await image.readAsBytes();
+          setState(() {
+            _selectedImageBytes.add(bytes);
+            _selectedImageNames.add(image.name);
+          });
+        } else {
+          invalidCount++;
+        }
+      }
+
+      if (invalidCount > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text(
+              '$invalidCount files ignored. Only PNG, JPG, and JPEG images are allowed.',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text('Error selecting images: $e', style: const TextStyle(color: Colors.white)),
+          ),
+        );
+      }
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImageBytes.removeAt(index);
+      _selectedImageNames.removeAt(index);
+    });
+  }
+
+  void _showFullscreenImage(Uint8List imageBytes) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Dialog(
+            backgroundColor: Colors.black.withValues(alpha: 0.9),
+            insetPadding: EdgeInsets.zero,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                InteractiveViewer(
+                  maxScale: 4.0,
+                  child: Image.memory(
+                    imageBytes,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  right: 20,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFullscreenNetworkImage(String imageUrl) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Dialog(
+            backgroundColor: Colors.black.withValues(alpha: 0.9),
+            insetPadding: EdgeInsets.zero,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                InteractiveViewer(
+                  maxScale: 4.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Icon(Icons.error, color: Colors.white, size: 40),
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  right: 20,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -64,17 +213,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String queryText = _queryController.text.trim();
     if (queryText.isEmpty) return;
 
+    final List<Uint8List> submittedBytes = List.from(_selectedImageBytes);
+
     _queryController.clear();
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
+      _selectedImageBytes.clear();
+      _selectedImageNames.clear();
     });
 
     try {
-      final Map<String, dynamic> rawEnvelope = await _apiService.searchCatalog(queryText);
+      final List<String> base64Images = submittedBytes
+          .map((bytes) => base64Encode(bytes))
+          .toList();
+
+      final Map<String, dynamic> rawEnvelope = await _apiService.searchCatalog(
+        queryText,
+        base64Images: base64Images.isNotEmpty ? base64Images : null,
+      );
       
       setState(() {
-        _chatHistory.add(AgentResponse.fromJson(queryText, rawEnvelope));
+        _chatHistory.add(AgentResponse.fromJson(
+          queryText,
+          rawEnvelope,
+          attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+        ));
       });
       _scrollToBottom();
     } on HttpException catch (e) {
@@ -965,7 +1129,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 bottomLeft: Radius.circular(16),
               ),
             ),
-            child: Text(response.query, style: const TextStyle(color: Colors.white, fontSize: 15)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (response.attachedImages != null && response.attachedImages!.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.end,
+                      children: List.generate(response.attachedImages!.length, (imgIndex) {
+                        final imgBytes = response.attachedImages![imgIndex];
+                        return GestureDetector(
+                          onTap: () => _showFullscreenImage(imgBytes),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.memory(
+                              imgBytes,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ],
+                Text(response.query, style: const TextStyle(color: Colors.white, fontSize: 15)),
+              ],
+            ),
           ),
         ),
 
@@ -1042,8 +1237,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
                   ),
                 ),
-                 const Divider(height: 24),
-                
+                if (response.sources.isNotEmpty) ...[
+                  const Divider(height: 24),
+                  Row(
+                    children: [
+                      const Icon(Icons.menu_book, color: Color(0xFF1E3A8A), size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Retrieved References (${response.sources.length})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...response.sources.map((source) => ReferenceCardWidget(source: source)),
+                ],
+                const Divider(height: 24),
                 const Text(
                   'Was this answer helpful?',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
@@ -1106,31 +1319,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
         border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: TextField(
-                controller: _queryController,
-                decoration: InputDecoration(
-                  hintText: AppConfig.queryHintText,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  filled: true,
-                  fillColor: const Color(0xFFF1F5F9),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+            if (_selectedImageBytes.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: SizedBox(
+                  height: 70,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _selectedImageBytes.length,
+                    itemBuilder: (context, index) {
+                      final imgBytes = _selectedImageBytes[index];
+                      return Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        width: 70,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  imgBytes,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 2,
+                              right: 2,
+                              child: GestureDetector(
+                                onTap: () => _removeImage(index),
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-                onSubmitted: (_) => _submitAgentQuery(),
               ),
-            ),
-            const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: const Color(0xFF1E3A8A),
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                onPressed: _submitAgentQuery,
-              ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF1E3A8A)),
+                  tooltip: 'Attach photos (PNG, JPG, JPEG only)',
+                  onPressed: _pickImages,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: TextField(
+                    controller: _queryController,
+                    decoration: InputDecoration(
+                      hintText: AppConfig.queryHintText,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F5F9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (_) => _submitAgentQuery(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                    onPressed: _submitAgentQuery,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1138,3 +1413,237 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+
+class ReferenceCardWidget extends StatefulWidget {
+  final KbSource source;
+
+  const ReferenceCardWidget({
+    super.key,
+    required this.source,
+  });
+
+  @override
+  State<ReferenceCardWidget> createState() => _ReferenceCardWidgetState();
+}
+
+class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
+  bool _isExpanded = false;
+
+  Future<void> _openPresignedUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open the link.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening link: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final source = widget.source;
+    final String fileName = source.sourceUri.split('/').last;
+    final int matchPercent = (source.score * 100).round();
+    final isTiger = source.kbModel.toUpperCase() == 'TIGER';
+    final String? presignedUrl = source.s3PresignedUrl ?? source.s3ImageUriPresigned;
+
+    String cleanText = source.text.trim();
+    while ((cleanText.startsWith("'") && cleanText.endsWith("'")) ||
+           (cleanText.startsWith('"') && cleanText.endsWith('"')) ||
+           (cleanText.startsWith('`') && cleanText.endsWith('`'))) {
+      cleanText = cleanText.substring(1, cleanText.length - 1).trim();
+    }
+
+    final bool hasBody = cleanText.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200, width: 1.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: hasBody
+                ? () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  }
+                : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isTiger ? Colors.amber.shade100 : Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${source.kbModel} Catalog',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: isTiger ? Colors.amber.shade900 : Colors.blue.shade900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Match: $matchPercent%',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '📄 $fileName',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (presignedUrl != null && presignedUrl.trim().isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: 'Open reference document',
+                      child: InkWell(
+                        onTap: () => _openPresignedUrl(presignedUrl),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.open_in_new,
+                                color: Colors.blue,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Open',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (hasBody) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.grey.shade500,
+                      size: 18,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          if (hasBody && _isExpanded) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Builder(
+                    builder: (context) {
+                      final bool isTable = cleanText.contains('|');
+
+                      Widget markdownWidget = MarkdownBody(
+                        selectable: true,
+                        data: cleanText,
+                        styleSheet: MarkdownStyleSheet(
+                          p: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade800,
+                            fontStyle: FontStyle.italic,
+                            height: 1.4,
+                          ),
+                          strong: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                          listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
+                          tableBody: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade800,
+                          ),
+                          tableHead: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                          tableBorder: TableBorder.all(
+                            color: Colors.grey.shade300,
+                            width: 1.0,
+                          ),
+                        ),
+                      );
+
+                      if (isTable) {
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: IntrinsicWidth(
+                                  child: markdownWidget,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }
+
+                      return markdownWidget;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
