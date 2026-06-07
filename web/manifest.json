@@ -1,11 +1,11 @@
 {
-    "name": "myapp",
-    "short_name": "myapp",
+    "name": "Shere Punjab Group AI",
+    "short_name": "Shere Punjab Group AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Shere Punjab Group AI Sonalika Spare Parts Catalog.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
