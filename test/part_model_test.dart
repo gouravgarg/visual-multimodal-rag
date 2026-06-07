@@ -23,23 +23,26 @@ void main() {
       expect(response.kbBHasData, isFalse);
     });
 
-    test('AgentResponse.fromJson parses kb_model from feedback_tracking map', () {
-      final json = {
-        'answer': 'Sample answer',
-        'feedback_tracking': {
-          'kb_a_id': 'ALPHA_01',
-          'kb_b_id': 'BETA_01',
-          'kb_a_has_data': false,
-          'kb_b_has_data': false,
-          'kb_model': 'RX_CATALOG_v2',
-        },
-        'sources': [],
-      };
+    test(
+      'AgentResponse.fromJson parses kb_model from feedback_tracking map',
+      () {
+        final json = {
+          'answer': 'Sample answer',
+          'feedback_tracking': {
+            'kb_a_id': 'ALPHA_01',
+            'kb_b_id': 'BETA_01',
+            'kb_a_has_data': false,
+            'kb_b_has_data': false,
+            'kb_model': 'RX_CATALOG_v2',
+          },
+          'sources': [],
+        };
 
-      final response = AgentResponse.fromJson('test query', json);
+        final response = AgentResponse.fromJson('test query', json);
 
-      expect(response.kbModel, equals('RX_CATALOG_v2'));
-    });
+        expect(response.kbModel, equals('RX_CATALOG_v2'));
+      },
+    );
 
     test('AgentResponse.fromJson handles absent kb_model elegantly', () {
       final json = {

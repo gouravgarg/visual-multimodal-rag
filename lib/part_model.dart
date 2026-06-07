@@ -41,6 +41,7 @@ class AgentResponse {
   final List<KbSource> sources;
   final String? s3ImageUriPresigned;
   final String? kbModel;
+  final double? processingTimeSeconds;
 
   AgentResponse({
     required this.query,
@@ -54,6 +55,7 @@ class AgentResponse {
     required this.sources,
     this.s3ImageUriPresigned,
     this.kbModel,
+    this.processingTimeSeconds,
   });
 
   /// Decodes your live Lambda JSON keys dynamically into typed values
@@ -61,6 +63,7 @@ class AgentResponse {
     String userQuery,
     Map<String, dynamic> json, {
     List<Uint8List>? attachedImages,
+    double? processingTimeSeconds,
   }) {
     final tracking = json['feedback_tracking'] as Map<String, dynamic>? ?? {};
 
@@ -85,6 +88,7 @@ class AgentResponse {
           json['s3_image_uri_presigned'] as String? ??
           tracking['s3_image_uri_presigned'] as String?,
       kbModel: json['kb_model'] as String? ?? tracking['kb_model'] as String?,
+      processingTimeSeconds: processingTimeSeconds,
     );
   }
 }

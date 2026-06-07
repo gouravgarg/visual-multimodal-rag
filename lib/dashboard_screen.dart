@@ -153,8 +153,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
-
   @override
   void initState() {
     super.initState();
@@ -440,6 +438,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _selectedImageNames.clear();
     });
 
+    final Stopwatch stopwatch = Stopwatch()..start();
     try {
       final List<String> base64Images = submittedBytes
           .map((bytes) => base64Encode(bytes))
@@ -453,12 +452,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         base64Images: base64Images.isNotEmpty ? base64Images : null,
       );
 
+      stopwatch.stop();
+      final double processingSeconds = stopwatch.elapsedMilliseconds / 1000.0;
+
       setState(() {
         _chatHistory.add(
           AgentResponse.fromJson(
             queryText, // Keep clean queryText for display, while API processed finalQueryText
             rawEnvelope,
             attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+            processingTimeSeconds: processingSeconds,
           ),
         );
       });
@@ -506,7 +509,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
-        debugPrint('canLaunchUrl returned false, attempting direct launch for $urlString');
+        debugPrint(
+          'canLaunchUrl returned false, attempting direct launch for $urlString',
+        );
         await launchUrl(url, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
@@ -1582,7 +1587,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  (response.kbModel != null && response.kbModel!.isNotEmpty)
+                                  (response.kbModel != null &&
+                                          response.kbModel!.isNotEmpty)
                                       ? response.kbModel!
                                       : 'Verified factual database record',
                                   style: const TextStyle(
@@ -1641,13 +1647,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
                 const Divider(height: 24),
-                const Text(
-                  'Was this answer helpful?',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Was this answer helpful?',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    if (response.processingTimeSeconds != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 13,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Time: ${response.processingTimeSeconds!.toStringAsFixed(1)}s',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(

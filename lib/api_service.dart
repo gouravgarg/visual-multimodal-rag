@@ -11,7 +11,7 @@ class ApiService {
   final AuthService _authService = AuthService();
   final http.Client _httpClient = http.Client();
 
-  static const Duration _networkTimeout = Duration(seconds: 15);
+  static const Duration _networkTimeout = Duration(seconds: 60);
 
   Future<Map<String, dynamic>> searchCatalog(
     String searchPrompt, {
