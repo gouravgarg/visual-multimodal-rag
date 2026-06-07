@@ -8,6 +8,7 @@ class ProgressiveStage {
   final String description;
   final int estimatedSeconds;
   final IconData icon;
+  final String? gifAsset;
   StageStatus status;
 
   ProgressiveStage({
@@ -15,6 +16,7 @@ class ProgressiveStage {
     required this.description,
     required this.estimatedSeconds,
     required this.icon,
+    this.gifAsset,
     this.status = StageStatus.waiting,
   });
 }
@@ -318,7 +320,12 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
                     : Colors.transparent,
                 shape: BoxShape.circle,
               ),
-              child: Icon(stage.icon, color: iconColor, size: 20),
+              child: _buildStageIcon(
+                stage,
+                iconColor,
+                isInProgress,
+                isCompleted,
+              ),
             ),
             const SizedBox(width: 14),
 
@@ -397,5 +404,110 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
         ),
       ),
     );
+  }
+
+  Widget _buildStageIcon(
+    ProgressiveStage stage,
+    Color color,
+    bool isInProgress,
+    bool isCompleted,
+  ) {
+    if (stage.gifAsset != null && isInProgress) {
+      return Image.asset(
+        stage.gifAsset!,
+        width: 20,
+        height: 20,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return ActiveStageAnimation(stage: stage, color: color);
+        },
+      );
+    }
+
+    if (isInProgress) {
+      return ActiveStageAnimation(stage: stage, color: color);
+    }
+
+    return Icon(stage.icon, color: color, size: 20);
+  }
+}
+
+class ActiveStageAnimation extends StatefulWidget {
+  final ProgressiveStage stage;
+  final Color color;
+
+  const ActiveStageAnimation({
+    super.key,
+    required this.stage,
+    required this.color,
+  });
+
+  @override
+  State<ActiveStageAnimation> createState() => _ActiveStageAnimationState();
+}
+
+class _ActiveStageAnimationState extends State<ActiveStageAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = widget.stage.icon;
+
+    if (icon == Icons.settings_suggest_rounded ||
+        icon == Icons.manage_search_rounded) {
+      return RotationTransition(
+        turns: _controller,
+        child: Icon(icon, color: widget.color, size: 20),
+      );
+    } else if (icon == Icons.image_search_rounded ||
+        icon == Icons.compare_rounded ||
+        icon == Icons.find_in_page_rounded) {
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.85, end: 1.15).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+        ),
+        child: Icon(icon, color: widget.color, size: 20),
+      );
+    } else if (icon == Icons.auto_awesome_rounded) {
+      return AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.rotate(
+            angle: _controller.value * 0.15,
+            child: Opacity(
+              opacity:
+                  0.5 +
+                  (_controller.value < 0.5
+                      ? _controller.value
+                      : 1.0 - _controller.value),
+              child: Icon(icon, color: widget.color, size: 20),
+            ),
+          );
+        },
+      );
+    } else {
+      return ScaleTransition(
+        scale: Tween<double>(begin: 0.9, end: 1.1).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+        ),
+        child: Icon(icon, color: widget.color, size: 20),
+      );
+    }
   }
 }
