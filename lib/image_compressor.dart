@@ -35,6 +35,13 @@ class ImageCompressor {
         _CompressionParams(bytes: originalBytes, config: config),
       );
 
+      if (result.lengthInBytes >= originalBytes.lengthInBytes) {
+        debugPrint(
+          '[ImageCompressor] Warning: Compressed image is larger than or equal to original (${result.lengthInBytes} >= ${originalBytes.lengthInBytes} bytes). Keeping original image.',
+        );
+        return originalBytes;
+      }
+
       final double compressedSizeKB = result.lengthInBytes / 1024.0;
       debugPrint(
         '[ImageCompressor] Compression Success for "$imageName" | New Size: ${compressedSizeKB.toStringAsFixed(2)} KB (Reduced by ${((originalSizeKB - compressedSizeKB) / originalSizeKB * 100).toStringAsFixed(1)}%)',
