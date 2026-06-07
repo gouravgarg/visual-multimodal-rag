@@ -18,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isLoading = false;
   bool _isVerificationStep = false; // Tracks if rendering the email OTP box
+  bool _isPasswordVisible = false;
   String? _errorMessage;
 
   @override
@@ -129,6 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
                           labelText: 'Email Address',
+                          prefixIcon: Icon(Icons.email_outlined),
                           border: OutlineInputBorder(),
                         ),
                         validator: (v) => (v == null || !v.contains('@'))
@@ -138,10 +140,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
+                        obscureText: !_isPasswordVisible,
+                        decoration: InputDecoration(
                           labelText: 'Password (Min 8 characters)',
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: const Color(0xFF1E3A8A),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                          border: const OutlineInputBorder(),
                         ),
                         validator: (v) => (v == null || v.length < 8)
                             ? 'Password fails minimal safety limits'
