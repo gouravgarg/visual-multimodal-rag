@@ -2205,14 +2205,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Was this answer helpful?',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
+                      if (!hasSubmittedFeedback)
+                        const Text(
+                          'Was this answer helpful?',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        )
+                      else
+                        const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Thank you!',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
                       if (response.processingTimeSeconds != null)
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -2235,61 +2256,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: hasSubmittedFeedback
-                              ? null
-                              : () => _submitFeedback(response, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade200,
-                            disabledForegroundColor: Colors.grey.shade500,
-                          ),
-                          icon: const Icon(
-                            Icons.thumb_up_alt_outlined,
-                            size: 14,
-                          ),
-                          label: Text(
-                            response.selectedFeedback == 1
-                                ? 'Marked Helpful'
-                                : 'Helpful',
-                            style: const TextStyle(fontSize: 11),
-                            overflow: TextOverflow.ellipsis,
+                  if (!hasSubmittedFeedback) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _submitFeedback(response, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade200,
+                              disabledForegroundColor: Colors.grey.shade500,
+                            ),
+                            icon: const Icon(
+                              Icons.thumb_up_alt_outlined,
+                              size: 14,
+                            ),
+                            label: const Text(
+                              'Helpful',
+                              style: TextStyle(fontSize: 11),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: hasSubmittedFeedback
-                              ? null
-                              : () => _submitFeedback(response, false),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade200,
-                            disabledForegroundColor: Colors.grey.shade500,
-                          ),
-                          icon: const Icon(
-                            Icons.thumb_down_alt_outlined,
-                            size: 14,
-                          ),
-                          label: Text(
-                            response.selectedFeedback == 2
-                                ? 'Marked Not Helpful'
-                                : 'Not Helpful',
-                            style: const TextStyle(fontSize: 11),
-                            overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _submitFeedback(response, false),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade200,
+                              disabledForegroundColor: Colors.grey.shade500,
+                            ),
+                            icon: const Icon(
+                              Icons.thumb_down_alt_outlined,
+                              size: 14,
+                            ),
+                            label: const Text(
+                              'Not Helpful',
+                              style: TextStyle(fontSize: 11),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ],
             ),
