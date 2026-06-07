@@ -10,6 +10,7 @@ import 'app_config.dart';
 import 'auth_service.dart';
 import 'part_model.dart';
 import 'image_compressor.dart';
+import 'progressive_loading_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -27,6 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   final List<AgentResponse> _chatHistory = [];
   bool _isProcessing = false;
+  bool _isProcessingWithImage = false;
   bool _isCompressing = false;
   String? _errorMessage;
   String? _userEmail;
@@ -433,6 +435,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _queryController.clear();
     setState(() {
       _isProcessing = true;
+      _isProcessingWithImage = submittedBytes.isNotEmpty;
       _errorMessage = null;
       _selectedImageBytes.clear();
       _selectedImageNames.clear();
@@ -1332,9 +1335,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
           ),
           if (_isProcessing)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.0),
-              child: CircularProgressIndicator(color: Color(0xFF1E3A8A)),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ProgressiveLoadingWidget(
+                hasImage: _isProcessingWithImage,
+              ),
             ),
           if (_errorMessage != null)
             Padding(
