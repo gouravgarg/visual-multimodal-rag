@@ -63,39 +63,69 @@ class ApiService {
 
       return _processResponse(response);
     } on http.ClientException catch (e) {
+      _saveExceptionLog(e.toString(), 'ClientException');
       throw HttpException('Network transport layer failure: ${e.message}');
-    } on TimeoutException {
+    } on TimeoutException catch (e) {
+      _saveExceptionLog(e.toString(), 'TimeoutException');
       throw const HttpException(
         'The connection timed out. Please verify connectivity.',
       );
     } on HttpException {
       rethrow;
     } catch (e) {
+      _saveExceptionLog(e.toString(), 'UnexpectedException');
       throw HttpException('Unexpected service failure: $e');
     }
   }
 
+  void _saveExceptionLog(String errorDetail, String errorType) {
+    try {
+      saveResponseLog({
+        'error_type': errorType,
+        'error_detail': errorDetail,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      });
+    } catch (e) {
+      safePrint('Local Log Warning: Failed to save exception log -> $e');
+    }
+  }
+
   Map<String, dynamic> _processResponse(http.Response response) {
-    switch (response.statusCode) {
-      case 200:
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> decoded =
+          jsonDecode(response.body) as Map<String, dynamic>;
+      saveResponseLog(decoded);
+      return decoded;
+    } else {
+      try {
         final Map<String, dynamic> decoded =
             jsonDecode(response.body) as Map<String, dynamic>;
         saveResponseLog(decoded);
-        return decoded;
-      case 401:
-        throw const HttpException(
-          'Unauthorized request. Session validation failed.',
-        );
-      case 403:
-        throw const HttpException('Forbidden payload access. Policy denial.');
-      case 500:
-        throw const HttpException(
-          'Internal backend processing failure. Please retry later.',
-        );
-      default:
-        throw HttpException(
-          'Server returned error status code: ${response.statusCode}',
-        );
+      } catch (e) {
+        saveResponseLog({
+          'error': 'Server returned error status code: ${response.statusCode}',
+          'raw_response_body': response.body,
+          'parse_error': e.toString(),
+          'timestamp': DateTime.now().toUtc().toIso8601String(),
+        });
+      }
+
+      switch (response.statusCode) {
+        case 401:
+          throw const HttpException(
+            'Unauthorized request. Session validation failed.',
+          );
+        case 403:
+          throw const HttpException('Forbidden payload access. Policy denial.');
+        case 500:
+          throw const HttpException(
+            'Internal backend processing failure. Please retry later.',
+          );
+        default:
+          throw HttpException(
+            'Server returned error status code: ${response.statusCode}',
+          );
+      }
     }
   }
 
