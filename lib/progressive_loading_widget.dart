@@ -253,7 +253,6 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
   Widget _buildStageCard(ProgressiveStage stage) {
     final bool isCompleted = stage.status == StageStatus.completed;
     final bool isInProgress = stage.status == StageStatus.inProgress;
-    final bool isWaiting = stage.status == StageStatus.waiting;
 
     Color cardBgColor;
     Color borderColor;
@@ -340,19 +339,6 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
                           ),
                         ),
                       ),
-                      if (isInProgress || isWaiting)
-                        Text(
-                          '~${stage.estimatedSeconds}s',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isWaiting
-                                ? Colors.grey.shade300
-                                : const Color(
-                                    0xFF1E3A8A,
-                                  ).withValues(alpha: 0.6),
-                          ),
-                        ),
                     ],
                   ),
                   const SizedBox(height: 4),

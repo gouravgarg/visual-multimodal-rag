@@ -11,6 +11,7 @@ import 'auth_service.dart';
 import 'part_model.dart';
 import 'image_compressor.dart';
 import 'progressive_loading_widget.dart';
+import 'search_history_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -32,6 +33,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isCompressing = false;
   String? _errorMessage;
   String? _userEmail;
+  final SearchHistoryService _searchHistoryService = SearchHistoryService();
+  String? _lastQueryText;
+  String? _lastSelectedModel;
+  List<Uint8List>? _lastAttachedImages;
 
   final ImagePicker _imagePicker = ImagePicker();
   final List<Uint8List> _selectedImageBytes = [];
@@ -175,6 +180,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _userEmail = userEmail;
     });
+
+    if (userEmail != null && userEmail.trim().isNotEmpty) {
+      final List<AgentResponse> history = await _searchHistoryService
+          .getHistory(userEmail);
+      if (mounted) {
+        setState(() {
+          _chatHistory.clear();
+          _chatHistory.addAll(history);
+        });
+        _scrollToBottom();
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -403,12 +420,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return selectedModel;
   }
 
-  Future<void> _submitAgentQuery() async {
-    final String queryText = _queryController.text.trim();
-    if (queryText.isEmpty) return;
+  Future<void> _submitAgentQuery({
+    String? retryQuery,
+    String? retryModel,
+    List<Uint8List>? retryImages,
+  }) async {
+    final String queryText = retryQuery ?? _queryController.text.trim();
+    if (queryText.isEmpty && retryQuery == null) return;
 
     // 1. Prompt for Trade Model selection and validate choice before API invocation
-    final String? selectedModel = await _showTradeModelSelectionDialog();
+    final String? selectedModel =
+        retryModel ?? await _showTradeModelSelectionDialog();
     if (selectedModel == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -430,15 +452,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return;
     }
 
-    final List<Uint8List> submittedBytes = List.from(_selectedImageBytes);
+    final List<Uint8List> submittedBytes =
+        retryImages ?? List.from(_selectedImageBytes);
 
-    _queryController.clear();
+    if (retryQuery == null) {
+      _queryController.clear();
+      setState(() {
+        _selectedImageBytes.clear();
+        _selectedImageNames.clear();
+      });
+    }
+
     setState(() {
       _isProcessing = true;
       _isProcessingWithImage = submittedBytes.isNotEmpty;
       _errorMessage = null;
-      _selectedImageBytes.clear();
-      _selectedImageNames.clear();
+      // Save last attempt parameters for retry UI
+      _lastQueryText = queryText;
+      _lastSelectedModel = selectedModel;
+      _lastAttachedImages = submittedBytes;
     });
 
     final Stopwatch stopwatch = Stopwatch()..start();
@@ -469,6 +501,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       });
       _scrollToBottom();
+
+      // Client-side local search history logging
+      if (_userEmail != null && _userEmail!.trim().isNotEmpty) {
+        await _searchHistoryService.saveSearch(
+          userEmail: _userEmail!,
+          query: queryText,
+          rawEnvelope: rawEnvelope,
+          attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+          processingTimeSeconds: processingSeconds,
+        );
+      }
     } on HttpException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
@@ -504,6 +547,431 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     }
+  }
+
+  Widget _buildModernErrorCard() {
+    final String errorText = _errorMessage ?? '';
+
+    // Determine error type for contextual design
+    IconData errorIcon = Icons.error_outline_rounded;
+    String errorCategory = 'Query Rejection';
+    Color themeColor = const Color(0xFFEF4444); // Red-500
+
+    if (errorText.toLowerCase().contains('timeout') ||
+        errorText.toLowerCase().contains('connection')) {
+      errorIcon = Icons.wifi_off_rounded;
+      errorCategory = 'Network Timeout';
+      themeColor = const Color(0xFFF59E0B); // Amber-500
+    } else if (errorText.toLowerCase().contains('unauthorized') ||
+        errorText.toLowerCase().contains('session')) {
+      errorIcon = Icons.lock_clock_rounded;
+      errorCategory = 'Session Expired';
+      themeColor = const Color(0xFFEC4899); // Pink-500
+    } else if (errorText.toLowerCase().contains('backend') ||
+        errorText.toLowerCase().contains('server')) {
+      errorIcon = Icons.dns_rounded;
+      errorCategory = 'Server Error';
+      themeColor = const Color(0xFFEF4444); // Red-500
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            themeColor.withValues(alpha: 0.1),
+            themeColor.withValues(alpha: 0.03),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: themeColor.withValues(alpha: 0.25),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: themeColor.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: themeColor.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: themeColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Icon(errorIcon, color: themeColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  errorCategory.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: themeColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  errorText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF334155), // Slate-700
+                    fontWeight: FontWeight.w500,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    if (_lastQueryText != null) ...[
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          _submitAgentQuery(
+                            retryQuery: _lastQueryText,
+                            retryModel: _lastSelectedModel,
+                            retryImages: _lastAttachedImages,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: const Icon(Icons.replay_rounded, size: 14),
+                        label: const Text(
+                          'Retry Search',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _errorMessage = null;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF64748B), // Slate-500
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Dismiss',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showSearchHistoryBottomSheet() async {
+    if (_userEmail == null) return;
+
+    // Fetch fresh logs (automatically prunes old ones)
+    final List<AgentResponse> history = await _searchHistoryService.getHistory(
+      _userEmail!,
+    );
+
+    if (!mounted) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Pull handler line
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.history_rounded,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Search History (3 Days)',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (history.isNotEmpty)
+                          TextButton.icon(
+                            onPressed: () async {
+                              final bool? confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Clear History'),
+                                  content: const Text(
+                                    'Are you sure you want to clear your local search history?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text(
+                                        'Clear',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                await _searchHistoryService.clearAllHistory(
+                                  _userEmail!,
+                                );
+                                setSheetState(() {
+                                  history.clear();
+                                });
+                                setState(() {
+                                  _chatHistory.clear();
+                                });
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.delete_sweep_rounded,
+                              size: 18,
+                              color: Colors.redAccent,
+                            ),
+                            label: const Text(
+                              'Clear All',
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(),
+
+                  // History list
+                  Expanded(
+                    child: history.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.history_toggle_off_rounded,
+                                  size: 64,
+                                  color: Colors.grey[300],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No search history yet',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Your searches of the last 3 days will appear here.',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: history.length,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            itemBuilder: (context, index) {
+                              final item =
+                                  history[history.length -
+                                      1 -
+                                      index]; // Show newest first
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: InkWell(
+                                  onTap: () {
+                                    // Set query in text field and close sheet so user can search again or view
+                                    _queryController.text = item.query;
+                                    Navigator.of(sheetContext).pop();
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(
+                                                  0xFF1E3A8A,
+                                                ).withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                item.kbModel?.toUpperCase() ??
+                                                    'CATALOG',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF1E3A8A),
+                                                ),
+                                              ),
+                                            ),
+                                            if (item.processingTimeSeconds !=
+                                                null)
+                                              Text(
+                                                '${item.processingTimeSeconds!.toStringAsFixed(2)}s',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey[500],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          item.query,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          item.unifiedAnswer,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _launchURL(String urlString) async {
@@ -1312,6 +1780,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: _showAboutDialog,
           ),
           IconButton(
+            icon: const Icon(Icons.history_rounded),
+            tooltip: 'Search History (3 Days)',
+            onPressed: _showSearchHistoryBottomSheet,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_outlined),
             onPressed: () async {
               await _authService.signOut();
@@ -1337,20 +1810,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (_isProcessing)
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: ProgressiveLoadingWidget(
-                hasImage: _isProcessingWithImage,
-              ),
+              child: ProgressiveLoadingWidget(hasImage: _isProcessingWithImage),
             ),
           if (_errorMessage != null)
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
-                vertical: 4,
+                vertical: 8,
               ),
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red, fontSize: 13),
-              ),
+              child: _buildModernErrorCard(),
             ),
           _buildInputBar(),
         ],
