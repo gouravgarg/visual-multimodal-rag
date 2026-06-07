@@ -513,9 +513,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       }
     } on HttpException catch (e) {
-      setState(() => _errorMessage = e.message);
+      stopwatch.stop();
+      final double processingSeconds = stopwatch.elapsedMilliseconds / 1000.0;
+      final Map<String, dynamic> errorEnvelope = {
+        'answer': e.message,
+        'is_error': true,
+        'sources': <dynamic>[],
+      };
+      setState(() {
+        _chatHistory.add(
+          AgentResponse.fromJson(
+            queryText,
+            errorEnvelope,
+            attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+            processingTimeSeconds: processingSeconds,
+            isError: true,
+          ),
+        );
+      });
+      _scrollToBottom();
+
+      if (_userEmail != null && _userEmail!.trim().isNotEmpty) {
+        await _searchHistoryService.saveSearch(
+          userEmail: _userEmail!,
+          query: queryText,
+          rawEnvelope: errorEnvelope,
+          attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+          processingTimeSeconds: processingSeconds,
+        );
+      }
     } catch (e) {
-      setState(() => _errorMessage = 'Failed to fetch agent resolution data.');
+      stopwatch.stop();
+      final double processingSeconds = stopwatch.elapsedMilliseconds / 1000.0;
+      final Map<String, dynamic> errorEnvelope = {
+        'answer': 'Failed to fetch agent resolution data.',
+        'is_error': true,
+        'sources': <dynamic>[],
+      };
+      setState(() {
+        _chatHistory.add(
+          AgentResponse.fromJson(
+            queryText,
+            errorEnvelope,
+            attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+            processingTimeSeconds: processingSeconds,
+            isError: true,
+          ),
+        );
+      });
+      _scrollToBottom();
+
+      if (_userEmail != null && _userEmail!.trim().isNotEmpty) {
+        await _searchHistoryService.saveSearch(
+          userEmail: _userEmail!,
+          query: queryText,
+          rawEnvelope: errorEnvelope,
+          attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+          processingTimeSeconds: processingSeconds,
+        );
+      }
     } finally {
       setState(() => _isProcessing = false);
     }
@@ -630,10 +686,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 4),
                 Text(
                   errorText,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF334155), // Slate-700
-                    fontWeight: FontWeight.w500,
+                    color: themeColor,
+                    fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
                 ),
@@ -1969,8 +2025,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 24),
+          color: response.isError ? const Color(0xFFFEF2F2) : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+            side: response.isError
+                ? const BorderSide(color: Color(0xFFFCA5A5), width: 1.5)
+                : BorderSide.none,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1980,101 +2040,114 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
-                        SizedBox(width: 8),
+                        Icon(
+                          response.isError
+                              ? Icons.error_outline_rounded
+                              : Icons.auto_awesome,
+                          color: response.isError
+                              ? const Color(0xFFEF4444)
+                              : Colors.amber,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
                         Text(
-                          'Synthesized Response',
+                          response.isError
+                              ? 'Query Rejection'
+                              : 'Synthesized Response',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: Colors.blueGrey,
+                            color: response.isError
+                                ? const Color(0xFFEF4444)
+                                : Colors.blueGrey,
                           ),
                         ),
                       ],
                     ),
 
                     // Dynamic visual badges showing true data origin
-                    Row(
-                      children: [
-                        if (response.kbAHasData)
-                          Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'α Alpha',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
+                    if (!response.isError)
+                      Row(
+                        children: [
+                          if (response.kbAHasData)
+                            Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
                               ),
-                            ),
-                          ),
-                        if (response.kbBHasData)
-                          Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.shade50,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'β Beta',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.purple,
-                                fontWeight: FontWeight.bold,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                            ),
-                          ),
-                        // 💡 New Pill: Displays when BOTH KBs are false, indicating a master database hit
-                        if (!response.kbAHasData && !response.kbBHasData)
-                          Container(
-                            margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.verified_user_outlined,
-                                  color: Colors.green,
-                                  size: 12,
+                              child: const Text(
+                                'α Alpha',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  (response.kbModel != null &&
-                                          response.kbModel!.isNotEmpty)
-                                      ? response.kbModel!
-                                      : 'Verified factual database record',
-                                  style: const TextStyle(
-                                    fontSize: 10,
+                              ),
+                            ),
+                          if (response.kbBHasData)
+                            Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.purple.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'β Beta',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.purple,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          // 💡 New Pill: Displays when BOTH KBs are false, indicating a master database hit
+                          if (!response.kbAHasData && !response.kbBHasData)
+                            Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.verified_user_outlined,
                                     color: Colors.green,
-                                    fontWeight: FontWeight.bold,
+                                    size: 12,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    (response.kbModel != null &&
+                                            response.kbModel!.isNotEmpty)
+                                        ? response.kbModel!
+                                        : 'Verified factual database record',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
                 const Divider(height: 20),
@@ -2082,16 +2155,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   selectable: true,
                   data: response.unifiedAnswer,
                   styleSheet: MarkdownStyleSheet(
-                    p: const TextStyle(
+                    p: TextStyle(
                       fontSize: 14,
                       height: 1.5,
-                      color: Colors.black87,
+                      color: response.isError
+                          ? const Color(0xFFEF4444)
+                          : Colors.black87,
                     ),
-                    strong: const TextStyle(
+                    strong: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E3A8A),
+                      color: response.isError
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF1E3A8A),
                     ),
-                    listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
+                    listBullet: TextStyle(
+                      color: response.isError
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF1E3A8A),
+                    ),
                   ),
                 ),
                 if (response.sources.isNotEmpty) ...[
@@ -2119,92 +2200,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     (source) => ReferenceCardWidget(source: source),
                   ),
                 ],
-                const Divider(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Was this answer helpful?',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
+                if (!response.isError) ...[
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Was this answer helpful?',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                    if (response.processingTimeSeconds != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.timer_outlined,
-                            size: 13,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Time: ${response.processingTimeSeconds!.toStringAsFixed(1)}s',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                      if (response.processingTimeSeconds != null)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.timer_outlined,
+                              size: 13,
                               color: Colors.grey,
                             ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Time: ${response.processingTimeSeconds!.toStringAsFixed(1)}s',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: hasSubmittedFeedback
+                              ? null
+                              : () => _submitFeedback(response, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.shade200,
+                            disabledForegroundColor: Colors.grey.shade500,
                           ),
-                        ],
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: hasSubmittedFeedback
-                            ? null
-                            : () => _submitFeedback(response, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey.shade200,
-                          disabledForegroundColor: Colors.grey.shade500,
-                        ),
-                        icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
-                        label: Text(
-                          response.selectedFeedback == 1
-                              ? 'Marked Helpful'
-                              : 'Helpful',
-                          style: const TextStyle(fontSize: 11),
-                          overflow: TextOverflow.ellipsis,
+                          icon: const Icon(
+                            Icons.thumb_up_alt_outlined,
+                            size: 14,
+                          ),
+                          label: Text(
+                            response.selectedFeedback == 1
+                                ? 'Marked Helpful'
+                                : 'Helpful',
+                            style: const TextStyle(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: hasSubmittedFeedback
-                            ? null
-                            : () => _submitFeedback(response, false),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey.shade200,
-                          disabledForegroundColor: Colors.grey.shade500,
-                        ),
-                        icon: const Icon(
-                          Icons.thumb_down_alt_outlined,
-                          size: 14,
-                        ),
-                        label: Text(
-                          response.selectedFeedback == 2
-                              ? 'Marked Not Helpful'
-                              : 'Not Helpful',
-                          style: const TextStyle(fontSize: 11),
-                          overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: hasSubmittedFeedback
+                              ? null
+                              : () => _submitFeedback(response, false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.shade200,
+                            disabledForegroundColor: Colors.grey.shade500,
+                          ),
+                          icon: const Icon(
+                            Icons.thumb_down_alt_outlined,
+                            size: 14,
+                          ),
+                          label: Text(
+                            response.selectedFeedback == 2
+                                ? 'Marked Not Helpful'
+                                : 'Not Helpful',
+                            style: const TextStyle(fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

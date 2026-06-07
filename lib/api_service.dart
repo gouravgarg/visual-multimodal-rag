@@ -61,28 +61,44 @@ class ApiService {
           )
           .timeout(_networkTimeout);
 
-      return _processResponse(response);
+      return _processResponse(response, requestPayload: requestBody);
     } on http.ClientException catch (e) {
-      _saveExceptionLog(e.toString(), 'ClientException');
+      _saveExceptionLog(
+        e.toString(),
+        'ClientException',
+        requestPayload: requestBody,
+      );
       throw HttpException('Network transport layer failure: ${e.message}');
     } on TimeoutException catch (e) {
-      _saveExceptionLog(e.toString(), 'TimeoutException');
+      _saveExceptionLog(
+        e.toString(),
+        'TimeoutException',
+        requestPayload: requestBody,
+      );
       throw const HttpException(
         'The connection timed out. Please verify connectivity.',
       );
     } on HttpException {
       rethrow;
     } catch (e) {
-      _saveExceptionLog(e.toString(), 'UnexpectedException');
+      _saveExceptionLog(
+        e.toString(),
+        'UnexpectedException',
+        requestPayload: requestBody,
+      );
       throw HttpException('Unexpected service failure: $e');
     }
   }
 
-  void _saveExceptionLog(String errorDetail, String errorType) {
+  void _saveExceptionLog(
+    String errorDetail,
+    String errorType, {
+    required Map<String, dynamic> requestPayload,
+  }) {
     try {
       saveResponseLog({
-        'error_type': errorType,
-        'error_detail': errorDetail,
+        'request': requestPayload,
+        'response': {'error_type': errorType, 'error_detail': errorDetail},
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       });
     } catch (e) {
@@ -90,41 +106,69 @@ class ApiService {
     }
   }
 
-  Map<String, dynamic> _processResponse(http.Response response) {
+  Map<String, dynamic> _processResponse(
+    http.Response response, {
+    required Map<String, dynamic> requestPayload,
+  }) {
     if (response.statusCode == 200) {
       final Map<String, dynamic> decoded =
           jsonDecode(response.body) as Map<String, dynamic>;
-      saveResponseLog(decoded);
+      saveResponseLog({
+        'request': requestPayload,
+        'response': decoded,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      });
       return decoded;
     } else {
+      String errorMessage =
+          'Server returned error status code: ${response.statusCode}';
+      Map<String, dynamic>? decodedError;
+
       try {
-        final Map<String, dynamic> decoded =
-            jsonDecode(response.body) as Map<String, dynamic>;
-        saveResponseLog(decoded);
-      } catch (e) {
-        saveResponseLog({
-          'error': 'Server returned error status code: ${response.statusCode}',
-          'raw_response_body': response.body,
-          'parse_error': e.toString(),
-          'timestamp': DateTime.now().toUtc().toIso8601String(),
-        });
-      }
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          decodedError = decoded;
+          if (decoded.containsKey('error')) {
+            errorMessage = decoded['error'].toString();
+          } else if (decoded.containsKey('message')) {
+            errorMessage = decoded['message'].toString();
+          }
+        }
+      } catch (_) {}
+
+      // Log both the request payload and the response details
+      saveResponseLog({
+        'request': requestPayload,
+        'response':
+            decodedError ??
+            {
+              'status_code': response.statusCode,
+              'raw_response_body': response.body,
+            },
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+      });
 
       switch (response.statusCode) {
         case 401:
-          throw const HttpException(
-            'Unauthorized request. Session validation failed.',
+          throw HttpException(
+            errorMessage != 'Server returned error status code: 401'
+                ? errorMessage
+                : 'Unauthorized request. Session validation failed.',
           );
         case 403:
-          throw const HttpException('Forbidden payload access. Policy denial.');
+          throw HttpException(
+            errorMessage != 'Server returned error status code: 403'
+                ? errorMessage
+                : 'Forbidden payload access. Policy denial.',
+          );
         case 500:
-          throw const HttpException(
-            'Internal backend processing failure. Please retry later.',
+          throw HttpException(
+            errorMessage != 'Server returned error status code: 500'
+                ? errorMessage
+                : 'Internal backend processing failure. Please retry later.',
           );
         default:
-          throw HttpException(
-            'Server returned error status code: ${response.statusCode}',
-          );
+          throw HttpException(errorMessage);
       }
     }
   }

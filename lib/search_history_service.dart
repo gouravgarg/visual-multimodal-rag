@@ -187,6 +187,7 @@ class SearchHistoryService {
               envelope,
               attachedImages: attachedImages,
               processingTimeSeconds: processingTime,
+              isError: envelope['is_error'] as bool? ?? false,
             ),
           );
         } catch (e) {
