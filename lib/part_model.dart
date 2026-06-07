@@ -34,12 +34,13 @@ class AgentResponse {
   final String unifiedAnswer;
   final String kbAId;
   final String kbBId;
-  final bool kbAHasData; 
-  final bool kbBHasData; 
-  int selectedFeedback; 
+  final bool kbAHasData;
+  final bool kbBHasData;
+  int selectedFeedback;
   final List<Uint8List>? attachedImages;
   final List<KbSource> sources;
   final String? s3ImageUriPresigned;
+  final String? kbModel;
 
   AgentResponse({
     required this.query,
@@ -52,6 +53,7 @@ class AgentResponse {
     this.attachedImages,
     required this.sources,
     this.s3ImageUriPresigned,
+    this.kbModel,
   });
 
   /// Decodes your live Lambda JSON keys dynamically into typed values
@@ -61,7 +63,7 @@ class AgentResponse {
     List<Uint8List>? attachedImages,
   }) {
     final tracking = json['feedback_tracking'] as Map<String, dynamic>? ?? {};
-    
+
     final rawAnswer = json['answer'] as String? ?? 'No response generated.';
     final cleanAnswer = rawAnswer.replaceAll('\\n', '\n');
 
@@ -75,11 +77,14 @@ class AgentResponse {
       unifiedAnswer: cleanAnswer,
       kbAId: tracking['kb_a_id'] as String? ?? 'KB_ALPHA',
       kbBId: tracking['kb_b_id'] as String? ?? 'KB_BETA',
-      kbAHasData: tracking['kb_a_has_data'] as bool? ?? false, 
-      kbBHasData: tracking['kb_b_has_data'] as bool? ?? false, 
+      kbAHasData: tracking['kb_a_has_data'] as bool? ?? false,
+      kbBHasData: tracking['kb_b_has_data'] as bool? ?? false,
       attachedImages: attachedImages,
       sources: parsedSources,
-      s3ImageUriPresigned: json['s3_image_uri_presigned'] as String? ?? tracking['s3_image_uri_presigned'] as String?,
+      s3ImageUriPresigned:
+          json['s3_image_uri_presigned'] as String? ??
+          tracking['s3_image_uri_presigned'] as String?,
+      kbModel: json['kb_model'] as String? ?? tracking['kb_model'] as String?,
     );
   }
 }

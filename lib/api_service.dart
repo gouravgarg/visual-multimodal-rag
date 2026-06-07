@@ -13,10 +13,14 @@ class ApiService {
 
   static const Duration _networkTimeout = Duration(seconds: 15);
 
-  Future<Map<String, dynamic>> searchCatalog(String searchPrompt, {List<String>? base64Images}) async {
-    final String apiBaseUrl = AppConfig.apiGatewayBaseUrl
-        .trim()
-        .replaceAll(RegExp(r'/+$'), '');
+  Future<Map<String, dynamic>> searchCatalog(
+    String searchPrompt, {
+    List<String>? base64Images,
+  }) async {
+    final String apiBaseUrl = AppConfig.apiGatewayBaseUrl.trim().replaceAll(
+      RegExp(r'/+$'),
+      '',
+    );
     if (apiBaseUrl.isEmpty) {
       throw const HttpException(
         'API_BASE_URL is not configured. Run the app with --dart-define=API_BASE_URL=<your API Gateway invoke URL>.',
@@ -40,7 +44,8 @@ class ApiService {
 
     final Map<String, dynamic> requestBody = {
       'query': searchPrompt,
-      if (base64Images != null && base64Images.isNotEmpty) 'images': base64Images,
+      if (base64Images != null && base64Images.isNotEmpty)
+        'images': base64Images,
     };
 
     try {
@@ -73,7 +78,8 @@ class ApiService {
   Map<String, dynamic> _processResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
-        final Map<String, dynamic> decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final Map<String, dynamic> decoded =
+            jsonDecode(response.body) as Map<String, dynamic>;
         saveResponseLog(decoded);
         return decoded;
       case 401:
@@ -108,7 +114,9 @@ class ApiService {
     if (feedbackApiBaseUrl.isEmpty) return false;
 
     if (!feedbackApiBaseUrl.startsWith('https://')) {
-      safePrint('Telemetry Security Error: Insecure HTTP protocol detected for FEEDBACK_API_BASE_URL. Must use HTTPS.');
+      safePrint(
+        'Telemetry Security Error: Insecure HTTP protocol detected for FEEDBACK_API_BASE_URL. Must use HTTPS.',
+      );
       return false;
     }
 
@@ -127,27 +135,23 @@ class ApiService {
       'feedback': isHelpful ? 'helpful' : 'not_helpful',
       'isHelpful': isHelpful,
       'sources': {
-        'alpha': {
-          'knowledgeBaseId': kbAId,
-          'hasData': kbAHasData,
-        },
-        'beta': {
-          'knowledgeBaseId': kbBId,
-          'hasData': kbBHasData,
-        },
+        'alpha': {'knowledgeBaseId': kbAId, 'hasData': kbAHasData},
+        'beta': {'knowledgeBaseId': kbBId, 'hasData': kbBHasData},
       },
       'timestamp': DateTime.now().toUtc().toIso8601String(),
     };
 
     try {
-      final response = await _httpClient.post(
-        targetUrl,
-        headers: {
-          HttpHeaders.authorizationHeader: idToken,
-          HttpHeaders.contentTypeHeader: 'application/json',
-        },
-        body: jsonEncode(feedbackPayload),
-      ).timeout(_networkTimeout);
+      final response = await _httpClient
+          .post(
+            targetUrl,
+            headers: {
+              HttpHeaders.authorizationHeader: idToken,
+              HttpHeaders.contentTypeHeader: 'application/json',
+            },
+            body: jsonEncode(feedbackPayload),
+          )
+          .timeout(_networkTimeout);
 
       return response.statusCode == 200;
     } catch (e) {

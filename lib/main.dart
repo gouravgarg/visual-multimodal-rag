@@ -9,10 +9,10 @@ import 'dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize AWS Amplify services before app rendering mounts
   final bool isAwsConfigured = await _configureAmplify();
-  
+
   runApp(TractorCatalogApp(isCoreInitialized: isAwsConfigured));
 }
 
@@ -20,7 +20,9 @@ Future<bool> _configureAmplify() async {
   if (AppConfig.cognitoUserPoolId.isEmpty ||
       AppConfig.cognitoAppClientId.isEmpty ||
       AppConfig.cognitoRegion.isEmpty) {
-    safePrint('Enterprise Critical Error: Cognito configuration is incomplete.');
+    safePrint(
+      'Enterprise Critical Error: Cognito configuration is incomplete.',
+    );
     return false;
   }
 
@@ -28,7 +30,7 @@ Future<bool> _configureAmplify() async {
     final authPlugin = AmplifyAuthCognito();
     await Amplify.addPlugin(authPlugin);
     await Amplify.configure(amplifyconfig);
-    
+
     safePrint('Enterprise Core: AWS Amplify successfully initialized.');
     return true;
   } on AmplifyAlreadyConfiguredException {
@@ -86,7 +88,7 @@ class _TractorCatalogAppState extends State<TractorCatalogApp> {
         primaryColor: const Color(0xFF1E3A8A),
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E3A8A)),
       ),
-      
+
       // Multi-state routing tree resolution engine
       home: _isCheckingSession
           ? const Scaffold(
@@ -95,12 +97,12 @@ class _TractorCatalogAppState extends State<TractorCatalogApp> {
               ),
             )
           : _isAuthenticated
-              ? DashboardScreen(
-                  onSignOut: () => setState(() => _isAuthenticated = false),
-                )
-              : LoginScreen(
-                  onLoginSuccess: () => setState(() => _isAuthenticated = true),
-                ),
+          ? DashboardScreen(
+              onSignOut: () => setState(() => _isAuthenticated = false),
+            )
+          : LoginScreen(
+              onLoginSuccess: () => setState(() => _isAuthenticated = true),
+            ),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'api_service.dart';
 import 'app_config.dart';
 import 'auth_service.dart';
 import 'part_model.dart';
+import 'image_compressor.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -26,6 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   final List<AgentResponse> _chatHistory = [];
   bool _isProcessing = false;
+  bool _isCompressing = false;
   String? _errorMessage;
   String? _userEmail;
 
@@ -38,22 +40,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final List<XFile> images = await _imagePicker.pickMultiImage();
       if (images.isEmpty) return;
 
+      setState(() {
+        _isCompressing = true;
+      });
+
       int invalidCount = 0;
       for (final image in images) {
         final String name = image.name.toLowerCase();
-        final bool isValid = name.endsWith('.png') ||
+        final bool isValid =
+            name.endsWith('.png') ||
             name.endsWith('.jpg') ||
             name.endsWith('.jpeg');
 
         if (isValid) {
-          final bytes = await image.readAsBytes();
-          setState(() {
-            _selectedImageBytes.add(bytes);
-            _selectedImageNames.add(image.name);
-          });
+          final Uint8List originalBytes = await image.readAsBytes();
+
+          // Compresses the image on a separate isolate (or main thread on Web)
+          final Uint8List compressedBytes = await ImageCompressor.compress(
+            originalBytes: originalBytes,
+            imageName: image.name,
+          );
+
+          if (mounted) {
+            setState(() {
+              _selectedImageBytes.add(compressedBytes);
+              _selectedImageNames.add(image.name);
+            });
+          }
         } else {
           invalidCount++;
         }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isCompressing = false;
+        });
       }
 
       if (invalidCount > 0 && mounted) {
@@ -62,17 +84,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
             backgroundColor: Colors.redAccent,
             content: Text(
               '$invalidCount files ignored. Only PNG, JPG, and JPEG images are allowed.',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isCompressing = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.redAccent,
-            content: Text('Error selecting images: $e', style: const TextStyle(color: Colors.white)),
+            content: Text(
+              'Error selecting images: $e',
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         );
       }
@@ -101,10 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 InteractiveViewer(
                   maxScale: 4.0,
-                  child: Image.memory(
-                    imageBytes,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.memory(imageBytes, fit: BoxFit.contain),
                 ),
                 Positioned(
                   top: 40,
@@ -125,55 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showFullscreenNetworkImage(String imageUrl) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Dialog(
-            backgroundColor: Colors.black.withValues(alpha: 0.9),
-            insetPadding: EdgeInsets.zero,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                InteractiveViewer(
-                  maxScale: 4.0,
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(Icons.error, color: Colors.white, size: 40),
-                      );
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: 40,
-                  right: 20,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.black54,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+
 
   @override
   void initState() {
@@ -209,9 +189,246 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  Future<String?> _showTradeModelSelectionDialog() async {
+    final List<String> models = AppConfig.supportedTradeModels;
+    if (models.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text(
+              'Configuration Error: No Trade Models are configured.',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      }
+      return null;
+    }
+
+    // If only one trade model is supported, use it directly without showing dialog
+    if (models.length == 1) {
+      return models.first;
+    }
+
+    String? selectedModel;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false, // Force explicit action
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              child: Container(
+                width: 320,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E3A8A), Color(0xFF0F172A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 15,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blueAccent.withValues(alpha: 0.15),
+                        border: Border.all(
+                          color: Colors.blueAccent,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.swap_horiz_rounded,
+                        color: Colors.blueAccent,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Select Trade Model',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Select a trade model to resolve your catalog query.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                    ),
+                    const SizedBox(height: 20),
+                    ...models.map((model) {
+                      final bool isSelected = selectedModel == model;
+                      return GestureDetector(
+                        onTap: () {
+                          setDialogState(() {
+                            selectedModel = model;
+                          });
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.blueAccent.withValues(alpha: 0.15)
+                                : Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.blueAccent
+                                  : Colors.white.withValues(alpha: 0.08),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                color: isSelected
+                                    ? Colors.blueAccent
+                                    : Colors.white54,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                model,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white70,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (model == 'TIGER')
+                                const Icon(
+                                  Icons.bolt,
+                                  color: Colors.amber,
+                                  size: 18,
+                                )
+                              else if (model == 'RX')
+                                const Icon(
+                                  Icons.speed,
+                                  color: Colors.redAccent,
+                                  size: 18,
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              selectedModel = null;
+                              Navigator.of(dialogContext).pop();
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white70,
+                              side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.2),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: selectedModel == null
+                                ? null
+                                : () => Navigator.of(dialogContext).pop(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.white12,
+                              disabledForegroundColor: Colors.white30,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Confirm'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    return selectedModel;
+  }
+
   Future<void> _submitAgentQuery() async {
     final String queryText = _queryController.text.trim();
     if (queryText.isEmpty) return;
+
+    // 1. Prompt for Trade Model selection and validate choice before API invocation
+    final String? selectedModel = await _showTradeModelSelectionDialog();
+    if (selectedModel == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.redAccent,
+            content: Text(
+              'Validation Error: A Trade Model must be selected before submitting a query.',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        );
+      }
+      setState(() {
+        _errorMessage = 'Validation Error: A Trade Model must be selected.';
+      });
+      return;
+    }
 
     final List<Uint8List> submittedBytes = List.from(_selectedImageBytes);
 
@@ -228,17 +445,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .map((bytes) => base64Encode(bytes))
           .toList();
 
+      // Prepends the selected Trade Model in uppercase format before calling API Gateway
+      final String finalQueryText = "${selectedModel.toUpperCase()} $queryText";
+
       final Map<String, dynamic> rawEnvelope = await _apiService.searchCatalog(
-        queryText,
+        finalQueryText,
         base64Images: base64Images.isNotEmpty ? base64Images : null,
       );
-      
+
       setState(() {
-        _chatHistory.add(AgentResponse.fromJson(
-          queryText,
-          rawEnvelope,
-          attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
-        ));
+        _chatHistory.add(
+          AgentResponse.fromJson(
+            queryText, // Keep clean queryText for display, while API processed finalQueryText
+            rawEnvelope,
+            attachedImages: submittedBytes.isNotEmpty ? submittedBytes : null,
+          ),
+        );
       });
       _scrollToBottom();
     } on HttpException catch (e) {
@@ -250,7 +472,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _submitFeedback(AgentResponse targetResponse, bool isHelpful) async {
+  Future<void> _submitFeedback(
+    AgentResponse targetResponse,
+    bool isHelpful,
+  ) async {
     if (targetResponse.selectedFeedback != 0) return;
 
     setState(() {
@@ -268,7 +493,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Network warning: Feedback telemetry failed to sync.')),
+        const SnackBar(
+          content: Text('Network warning: Feedback telemetry failed to sync.'),
+        ),
       );
     }
   }
@@ -279,7 +506,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
-        debugPrint('Could not launch $urlString');
+        debugPrint('canLaunchUrl returned false, attempting direct launch for $urlString');
+        await launchUrl(url, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
@@ -298,16 +526,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         Widget dialogContent;
         if (style == 'minimalistseal') {
-          dialogContent = _buildMinimalistSeal(context, showEnv, envVal, currentDateTime);
+          dialogContent = _buildMinimalistSeal(
+            context,
+            showEnv,
+            envVal,
+            currentDateTime,
+          );
         } else if (style == 'cyberglow') {
-          dialogContent = _buildCyberGlow(context, showEnv, envVal, currentDateTime);
+          dialogContent = _buildCyberGlow(
+            context,
+            showEnv,
+            envVal,
+            currentDateTime,
+          );
         } else {
-          dialogContent = _buildSapphirePlaque(context, showEnv, envVal, currentDateTime);
+          dialogContent = _buildSapphirePlaque(
+            context,
+            showEnv,
+            envVal,
+            currentDateTime,
+          );
         }
 
         return Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
           elevation: 0,
           child: dialogContent,
         );
@@ -368,7 +614,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 28.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -408,7 +657,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
@@ -423,16 +675,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.3), thickness: 1),
+                  Divider(
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                    thickness: 1,
+                  ),
                   const SizedBox(height: 14),
                   if (showEnv) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFFD4AF37,
+                            ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: const Color(0xFFD4AF37),
@@ -499,9 +759,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           onTap: () => _launchURL('https://gouravgarg.co.uk'),
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFFD4AF37,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Row(
@@ -553,7 +818,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       child: const Text(
                         'Acknowledge & Close',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
@@ -603,10 +871,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: const Color(0xFFF1F5F9),
-                border: Border.all(
-                  color: const Color(0xFFE2E8F0),
-                  width: 1.0,
-                ),
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
               ),
               alignment: Alignment.center,
               child: const Text(
@@ -644,7 +909,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 16),
             if (showEnv) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
@@ -688,7 +956,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onTap: () => _launchURL('https://gouravgarg.co.uk'),
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
@@ -751,10 +1022,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF090D16),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF00F2FE),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFF00F2FE), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF00F2FE).withValues(alpha: 0.15),
@@ -787,7 +1055,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 28.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -843,18 +1114,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Divider(color: const Color(0xFF00F2FE).withValues(alpha: 0.2), thickness: 1),
+                  Divider(
+                    color: const Color(0xFF00F2FE).withValues(alpha: 0.2),
+                    thickness: 1,
+                  ),
                   const SizedBox(height: 16),
                   if (showEnv) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.redAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: Colors.redAccent,
-                          width: 1.0,
-                        ),
+                        border: Border.all(color: Colors.redAccent, width: 1.0),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -876,13 +1150,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               fontFamily: 'Courier',
                               color: Colors.redAccent,
                               letterSpacing: 1.0,
-                        ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-              ],
+                    ),
+                    const SizedBox(height: 18),
+                  ],
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -921,7 +1195,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           onTap: () => _launchURL('https://gouravgarg.co.uk'),
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF00F2FE), Color(0xFF4FACFE)],
@@ -929,7 +1206,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF00F2FE).withValues(alpha: 0.3),
+                                  color: const Color(
+                                    0xFF00F2FE,
+                                  ).withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -981,7 +1260,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFF00F2FE), width: 1.5),
+                          side: const BorderSide(
+                            color: Color(0xFF00F2FE),
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       child: const Text(
@@ -1003,13 +1285,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-// Continued in Module 2...
+
+  // Continued in Module 2...
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(AppConfig.appName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          AppConfig.appName,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         actions: [
@@ -1047,8 +1333,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           if (_errorMessage != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
-              child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 4,
+              ),
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
             ),
           _buildInputBar(),
         ],
@@ -1067,11 +1359,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF05070D),
-            Color(0xFF111827),
-            Color(0xFF1E3A8A),
-          ],
+          colors: [Color(0xFF05070D), Color(0xFF111827), Color(0xFF1E3A8A)],
         ),
       ),
       child: Center(
@@ -1108,7 +1396,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-// Continued in Module 3...
+
+  // Continued in Module 3...
   Widget _buildChatBubble(AgentResponse response) {
     final bool hasSubmittedFeedback = response.selectedFeedback != 0;
 
@@ -1133,32 +1422,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (response.attachedImages != null && response.attachedImages!.isNotEmpty) ...[
+                if (response.attachedImages != null &&
+                    response.attachedImages!.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8.0),
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       alignment: WrapAlignment.end,
-                      children: List.generate(response.attachedImages!.length, (imgIndex) {
+                      children: List.generate(response.attachedImages!.length, (
+                        imgIndex,
+                      ) {
                         final imgBytes = response.attachedImages![imgIndex];
+                        final double sizeKB = imgBytes.lengthInBytes / 1024.0;
+
                         return GestureDetector(
                           onTap: () => _showFullscreenImage(imgBytes),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.memory(
-                              imgBytes,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  imgBytes,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.65),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '${sizeKB.toStringAsFixed(1)} KB',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }),
                     ),
                   ),
                 ],
-                Text(response.query, style: const TextStyle(color: Colors.white, fontSize: 15)),
+                Text(
+                  response.query,
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                ),
               ],
             ),
           ),
@@ -1168,7 +1491,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -1183,48 +1508,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         SizedBox(width: 8),
                         Text(
                           'Synthesized Response',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blueGrey),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.blueGrey,
+                          ),
                         ),
                       ],
                     ),
-                    
+
                     // Dynamic visual badges showing true data origin
                     Row(
                       children: [
                         if (response.kbAHasData)
                           Container(
                             margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(4)),
-                            child: const Text('α Alpha', style: TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'α Alpha',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         if (response.kbBHasData)
                           Container(
                             margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(4)),
-                            child: const Text('β Beta', style: TextStyle(fontSize: 10, color: Colors.purple, fontWeight: FontWeight.bold)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'β Beta',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.purple,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          // 💡 New Pill: Displays when BOTH KBs are false, indicating a master database hit
+                        // 💡 New Pill: Displays when BOTH KBs are false, indicating a master database hit
                         if (!response.kbAHasData && !response.kbBHasData)
                           Container(
                             margin: const EdgeInsets.only(left: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(4)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.verified_user_outlined, color: Colors.green, size: 12),
+                                const Icon(
+                                  Icons.verified_user_outlined,
+                                  color: Colors.green,
+                                  size: 12,
+                                ),
                                 const SizedBox(width: 4),
-                                const Text(
-                                  'Verified factual database record',
-                                  style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+                                Text(
+                                  (response.kbModel != null && response.kbModel!.isNotEmpty)
+                                      ? response.kbModel!
+                                      : 'Verified factual database record',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                       ],
-                    )
+                    ),
                   ],
                 ),
                 const Divider(height: 20),
@@ -1232,8 +1603,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   selectable: true,
                   data: response.unifiedAnswer,
                   styleSheet: MarkdownStyleSheet(
-                    p: const TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
-                    strong: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                    p: const TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: Colors.black87,
+                    ),
+                    strong: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E3A8A),
+                    ),
                     listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
                   ),
                 ),
@@ -1241,7 +1619,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const Divider(height: 24),
                   Row(
                     children: [
-                      const Icon(Icons.menu_book, color: Color(0xFF1E3A8A), size: 16),
+                      const Icon(
+                        Icons.menu_book,
+                        color: Color(0xFF1E3A8A),
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Retrieved References (${response.sources.length})',
@@ -1254,12 +1636,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  ...response.sources.map((source) => ReferenceCardWidget(source: source)),
+                  ...response.sources.map(
+                    (source) => ReferenceCardWidget(source: source),
+                  ),
                 ],
                 const Divider(height: 24),
                 const Text(
                   'Was this answer helpful?',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -1267,7 +1655,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: hasSubmittedFeedback ? null : () => _submitFeedback(response, true),
+                        onPressed: hasSubmittedFeedback
+                            ? null
+                            : () => _submitFeedback(response, true),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
@@ -1276,7 +1666,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         icon: const Icon(Icons.thumb_up_alt_outlined, size: 14),
                         label: Text(
-                          response.selectedFeedback == 1 ? 'Marked Helpful' : 'Helpful',
+                          response.selectedFeedback == 1
+                              ? 'Marked Helpful'
+                              : 'Helpful',
                           style: const TextStyle(fontSize: 11),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1285,16 +1677,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: hasSubmittedFeedback ? null : () => _submitFeedback(response, false),
+                        onPressed: hasSubmittedFeedback
+                            ? null
+                            : () => _submitFeedback(response, false),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: Colors.grey.shade200,
                           disabledForegroundColor: Colors.grey.shade500,
                         ),
-                        icon: const Icon(Icons.thumb_down_alt_outlined, size: 14),
+                        icon: const Icon(
+                          Icons.thumb_down_alt_outlined,
+                          size: 14,
+                        ),
                         label: Text(
-                          response.selectedFeedback == 2 ? 'Marked Not Helpful' : 'Not Helpful',
+                          response.selectedFeedback == 2
+                              ? 'Marked Not Helpful'
+                              : 'Not Helpful',
                           style: const TextStyle(fontSize: 11),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1310,7 +1709,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-
   Widget _buildInputBar() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1323,6 +1721,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_isCompressing)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8.0, left: 4.0),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.0,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Optimizing images locally...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (_selectedImageBytes.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
@@ -1333,6 +1756,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     itemCount: _selectedImageBytes.length,
                     itemBuilder: (context, index) {
                       final imgBytes = _selectedImageBytes[index];
+                      final double sizeKB = imgBytes.lengthInBytes / 1024.0;
+
                       return Container(
                         margin: const EdgeInsets.only(right: 8),
                         width: 70,
@@ -1366,6 +1791,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                             ),
+                            Positioned(
+                              bottom: 2,
+                              left: 2,
+                              right: 2,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '${sizeKB.toStringAsFixed(1)} KB',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -1376,7 +1825,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF1E3A8A)),
+                  icon: const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: Color(0xFF1E3A8A),
+                  ),
                   tooltip: 'Attach photos (PNG, JPG, JPEG only)',
                   onPressed: _pickImages,
                 ),
@@ -1386,7 +1838,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     controller: _queryController,
                     decoration: InputDecoration(
                       hintText: AppConfig.queryHintText,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       filled: true,
                       fillColor: const Color(0xFFF1F5F9),
                       border: OutlineInputBorder(
@@ -1417,10 +1872,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class ReferenceCardWidget extends StatefulWidget {
   final KbSource source;
 
-  const ReferenceCardWidget({
-    super.key,
-    required this.source,
-  });
+  const ReferenceCardWidget({super.key, required this.source});
 
   @override
   State<ReferenceCardWidget> createState() => _ReferenceCardWidgetState();
@@ -1435,17 +1887,14 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open the link.')),
-          );
-        }
+        // Fallback: try launching directly
+        await launchUrl(url, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening link: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error opening link: $e')));
       }
     }
   }
@@ -1456,12 +1905,13 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
     final String fileName = source.sourceUri.split('/').last;
     final int matchPercent = (source.score * 100).round();
     final isTiger = source.kbModel.toUpperCase() == 'TIGER';
-    final String? presignedUrl = source.s3PresignedUrl ?? source.s3ImageUriPresigned;
+    final String? presignedUrl =
+        source.s3PresignedUrl ?? source.s3ImageUriPresigned;
 
     String cleanText = source.text.trim();
     while ((cleanText.startsWith("'") && cleanText.endsWith("'")) ||
-           (cleanText.startsWith('"') && cleanText.endsWith('"')) ||
-           (cleanText.startsWith('`') && cleanText.endsWith('`'))) {
+        (cleanText.startsWith('"') && cleanText.endsWith('"')) ||
+        (cleanText.startsWith('`') && cleanText.endsWith('`'))) {
       cleanText = cleanText.substring(1, cleanText.length - 1).trim();
     }
 
@@ -1491,9 +1941,14 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: isTiger ? Colors.amber.shade100 : Colors.blue.shade100,
+                      color: isTiger
+                          ? Colors.amber.shade100
+                          : Colors.blue.shade100,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -1501,13 +1956,18 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
-                        color: isTiger ? Colors.amber.shade900 : Colors.blue.shade900,
+                        color: isTiger
+                            ? Colors.amber.shade900
+                            : Colors.blue.shade900,
                       ),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(4),
@@ -1533,7 +1993,8 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (presignedUrl != null && presignedUrl.trim().isNotEmpty) ...[
+                  if (presignedUrl != null &&
+                      presignedUrl.trim().isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Tooltip(
                       message: 'Open reference document',
@@ -1541,7 +2002,10 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                         onTap: () => _openPresignedUrl(presignedUrl),
                         borderRadius: BorderRadius.circular(4),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -1569,7 +2033,9 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                   if (hasBody) ...[
                     const SizedBox(width: 8),
                     Icon(
-                      _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      _isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
                       color: Colors.grey.shade500,
                       size: 18,
                     ),
@@ -1580,7 +2046,11 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
           ),
           if (hasBody && _isExpanded) ...[
             Padding(
-              padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+              padding: const EdgeInsets.only(
+                left: 12.0,
+                right: 12.0,
+                bottom: 12.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1598,7 +2068,10 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                             fontStyle: FontStyle.italic,
                             height: 1.4,
                           ),
-                          strong: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                          strong: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E3A8A),
+                          ),
                           listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
                           tableBody: TextStyle(
                             fontSize: 11,
@@ -1625,9 +2098,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                                 constraints: BoxConstraints(
                                   minWidth: constraints.maxWidth,
                                 ),
-                                child: IntrinsicWidth(
-                                  child: markdownWidget,
-                                ),
+                                child: IntrinsicWidth(child: markdownWidget),
                               ),
                             );
                           },
@@ -1646,4 +2117,3 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
     );
   }
 }
-

@@ -56,7 +56,8 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         if (mounted) {
           setState(() {
-            _errorMessage = 'Sign-in is incomplete or failed. Please check your credentials or contact your administrator.';
+            _errorMessage =
+                'Sign-in is incomplete or failed. Please check your credentials or contact your administrator.';
           });
         }
       }

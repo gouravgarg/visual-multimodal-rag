@@ -26,13 +26,15 @@ void saveResponseLog(Map<String, dynamic> responseData) {
       final anchor = html.AnchorElement(href: url)
         ..setAttribute('download', 'response_$timestamp.json')
         ..style.display = 'none';
-      
+
       html.document.body?.children.add(anchor);
       anchor.click();
       anchor.remove();
       html.Url.revokeObjectUrl(url);
 
-      safePrint('Local Log (Web): Triggered download for response_$timestamp.json');
+      safePrint(
+        'Local Log (Web): Triggered download for response_$timestamp.json',
+      );
     }
   } catch (e) {
     safePrint('Local Log Warning (Web): Failed to download response log -> $e');

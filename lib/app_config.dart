@@ -95,4 +95,21 @@ class AppConfig {
     'ABOUT_SCREEN_STYLE',
     defaultValue: 'MinimalistSeal',
   );
+
+  /// Comma-separated list of supported Trade Models.
+  /// Default value: 'TIGER,RX'
+  static const String tradeModelsConfig = String.fromEnvironment(
+    'TRADE_MODELS',
+    defaultValue: 'TIGER,RX',
+  );
+
+  /// Parses the configurable tradeModelsConfig string into a list of uppercase trade models.
+  static List<String> get supportedTradeModels {
+    if (tradeModelsConfig.trim().isEmpty) return const [];
+    return tradeModelsConfig
+        .split(',')
+        .map((model) => model.trim().toUpperCase())
+        .where((model) => model.isNotEmpty)
+        .toList();
+  }
 }
