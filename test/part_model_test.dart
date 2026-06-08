@@ -60,5 +60,32 @@ void main() {
 
       expect(response.kbModel, isNull);
     });
+
+    test('AgentResponse defaults createdAt to DateTime.now()', () {
+      final json = {
+        'answer': 'Sample answer',
+        'sources': [],
+      };
+      final now = DateTime.now();
+      final response = AgentResponse.fromJson('test query', json);
+
+      // The createdAt should be set to now or very recently.
+      expect(response.createdAt.difference(now).inSeconds.abs(), lessThan(5));
+    });
+
+    test('AgentResponse respects provided custom createdAt timestamp', () {
+      final json = {
+        'answer': 'Sample answer',
+        'sources': [],
+      };
+      final customTime = DateTime.now().subtract(const Duration(hours: 2));
+      final response = AgentResponse.fromJson(
+        'test query',
+        json,
+        createdAt: customTime,
+      );
+
+      expect(response.createdAt, equals(customTime));
+    });
   });
 }

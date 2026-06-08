@@ -181,6 +181,11 @@ class SearchHistoryService {
                 .toList();
           }
 
+          final String? timestampStr = record['timestamp'] as String?;
+          final DateTime? itemCreatedAt = timestampStr != null
+              ? DateTime.parse(timestampStr).toLocal()
+              : null;
+
           parsedHistory.add(
             AgentResponse.fromJson(
               query,
@@ -188,6 +193,7 @@ class SearchHistoryService {
               attachedImages: attachedImages,
               processingTimeSeconds: processingTime,
               isError: envelope['is_error'] as bool? ?? false,
+              createdAt: itemCreatedAt,
             ),
           );
         } catch (e) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -2219,7 +2220,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 10),
                   ...response.sources.map(
-                    (source) => ReferenceCardWidget(source: source),
+                    (source) => ReferenceCardWidget(
+                      source: source,
+                      responseCreatedAt: response.createdAt,
+                    ),
                   ),
                 ],
                 if (!response.isError) ...[
@@ -2337,169 +2341,189 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildInputBar() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_isCompressing)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8.0, left: 4.0),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.0,
-                        color: Color(0xFF1E3A8A),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isCompressing)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8.0, left: 4.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Optimizing images locally...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_selectedImageBytes.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: SizedBox(
+                      height: 70,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _selectedImageBytes.length,
+                        itemBuilder: (context, index) {
+                          final imgBytes = _selectedImageBytes[index];
+                          final double sizeKB = imgBytes.lengthInBytes / 1024.0;
+
+                          return Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            width: 70,
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(
+                                      imgBytes,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 2,
+                                  right: 2,
+                                  child: GestureDetector(
+                                    onTap: () => _removeImage(index),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 2,
+                                  left: 2,
+                                  right: 2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.65),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '${sizeKB.toStringAsFixed(1)} KB',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Optimizing images locally...',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                  ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.add_photo_alternate_outlined,
                         color: Color(0xFF1E3A8A),
+                      ),
+                      tooltip: 'Attach photos (PNG, JPG, JPEG only)',
+                      onPressed: _pickImages,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: _queryController,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 1,
+                        maxLines: 5,
+                        decoration: InputDecoration(
+                          hintText: AppConfig.queryHintText,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onSubmitted: (_) => _submitAgentQuery(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    CircleAvatar(
+                      backgroundColor: const Color(0xFF1E3A8A),
+                      child: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                        onPressed: _submitAgentQuery,
                       ),
                     ),
                   ],
                 ),
-              ),
-            if (_selectedImageBytes.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: SizedBox(
-                  height: 70,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _selectedImageBytes.length,
-                    itemBuilder: (context, index) {
-                      final imgBytes = _selectedImageBytes[index];
-                      final double sizeKB = imgBytes.lengthInBytes / 1024.0;
-
-                      return Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        width: 70,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.memory(
-                                  imgBytes,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 2,
-                              right: 2,
-                              child: GestureDetector(
-                                onTap: () => _removeImage(index),
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 2,
-                              left: 2,
-                              right: 2,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.65),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '${sizeKB.toStringAsFixed(1)} KB',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.add_photo_alternate_outlined,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                  tooltip: 'Attach photos (PNG, JPG, JPEG only)',
-                  onPressed: _pickImages,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: TextField(
-                    controller: _queryController,
-                    decoration: InputDecoration(
-                      hintText: AppConfig.queryHintText,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    onSubmitted: (_) => _submitAgentQuery(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                    onPressed: _submitAgentQuery,
-                  ),
-                ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
+        if (_isProcessing)
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ShiftingGradientLine(),
+          ),
+      ],
     );
   }
 }
 
 class ReferenceCardWidget extends StatefulWidget {
   final KbSource source;
+  final DateTime? responseCreatedAt;
 
-  const ReferenceCardWidget({super.key, required this.source});
+  const ReferenceCardWidget({
+    super.key,
+    required this.source,
+    this.responseCreatedAt,
+  });
 
   @override
   State<ReferenceCardWidget> createState() => _ReferenceCardWidgetState();
@@ -2507,6 +2531,46 @@ class ReferenceCardWidget extends StatefulWidget {
 
 class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
   bool _isExpanded = false;
+  Timer? _expiryTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startExpiryTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant ReferenceCardWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.responseCreatedAt != widget.responseCreatedAt) {
+      _startExpiryTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _expiryTimer?.cancel();
+    super.dispose();
+  }
+
+  bool get _isLinkExpired {
+    final createdAt = widget.responseCreatedAt ?? DateTime.now();
+    return DateTime.now().difference(createdAt).inSeconds >= 3600;
+  }
+
+  void _startExpiryTimer() {
+    _expiryTimer?.cancel();
+    final createdAt = widget.responseCreatedAt ?? DateTime.now();
+    final timePassed = DateTime.now().difference(createdAt);
+    final remainingSeconds = 3600 - timePassed.inSeconds;
+    if (remainingSeconds > 0) {
+      _expiryTimer = Timer(Duration(seconds: remainingSeconds), () {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+  }
 
   Future<void> _openPresignedUrl(String urlString) async {
     final Uri url = Uri.parse(urlString);
@@ -2534,6 +2598,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
     final isTiger = source.kbModel.toUpperCase() == 'TIGER';
     final String? presignedUrl =
         source.s3PresignedUrl ?? source.s3ImageUriPresigned;
+    final bool isExpired = _isLinkExpired;
 
     String cleanText = source.text.trim();
     while ((cleanText.startsWith("'") && cleanText.endsWith("'")) ||
@@ -2624,9 +2689,11 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                       presignedUrl.trim().isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Tooltip(
-                      message: 'Open reference document',
+                      message: isExpired
+                          ? 'Link expired (S3 presigned URLs expire after 1 hour)'
+                          : 'Open reference document',
                       child: InkWell(
-                        onTap: () => _openPresignedUrl(presignedUrl),
+                        onTap: isExpired ? null : () => _openPresignedUrl(presignedUrl),
                         borderRadius: BorderRadius.circular(4),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -2636,19 +2703,21 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
-                                Icons.open_in_new,
-                                color: Colors.blue,
+                              Icon(
+                                isExpired ? Icons.link_off : Icons.open_in_new,
+                                color: isExpired ? Colors.grey : Colors.blue,
                                 size: 14,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Open',
+                                isExpired ? 'Expired' : 'Open',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.blue.shade700,
+                                  color: isExpired ? Colors.grey : Colors.blue.shade700,
                                   fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
+                                  decoration: isExpired
+                                      ? TextDecoration.none
+                                      : TextDecoration.underline,
                                 ),
                               ),
                             ],
@@ -2741,6 +2810,61 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
           ],
         ],
       ),
+    );
+  }
+}
+
+class ShiftingGradientLine extends StatefulWidget {
+  const ShiftingGradientLine({super.key});
+
+  @override
+  State<ShiftingGradientLine> createState() => _ShiftingGradientLineState();
+}
+
+class _ShiftingGradientLineState extends State<ShiftingGradientLine>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          height: 3,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: const [
+                Color(0xFF3B82F6), // Blue
+                Color(0xFF8B5CF6), // Purple
+                Color(0xFFEC4899), // Pink
+                Color(0xFFF59E0B), // Amber
+                Color(0xFF10B981), // Emerald
+                Color(0xFF3B82F6), // Blue
+              ],
+              begin: Alignment(-1.0 + _controller.value * 2.0, 0.0),
+              end: Alignment(1.0 + _controller.value * 2.0, 0.0),
+              tileMode: TileMode.repeated,
+            ),
+          ),
+        );
+      },
     );
   }
 }

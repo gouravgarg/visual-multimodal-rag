@@ -43,6 +43,7 @@ class AgentResponse {
   final String? kbModel;
   final double? processingTimeSeconds;
   final bool isError;
+  final DateTime createdAt;
 
   AgentResponse({
     required this.query,
@@ -58,7 +59,8 @@ class AgentResponse {
     this.kbModel,
     this.processingTimeSeconds,
     this.isError = false,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   /// Decodes your live Lambda JSON keys dynamically into typed values
   factory AgentResponse.fromJson(
@@ -67,6 +69,7 @@ class AgentResponse {
     List<Uint8List>? attachedImages,
     double? processingTimeSeconds,
     bool isError = false,
+    DateTime? createdAt,
   }) {
     final tracking = json['feedback_tracking'] as Map<String, dynamic>? ?? {};
 
@@ -93,6 +96,7 @@ class AgentResponse {
       kbModel: json['kb_model'] as String? ?? tracking['kb_model'] as String?,
       processingTimeSeconds: processingTimeSeconds,
       isError: isError,
+      createdAt: createdAt,
     );
   }
 }
