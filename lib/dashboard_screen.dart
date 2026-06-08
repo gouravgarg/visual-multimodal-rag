@@ -674,16 +674,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  errorCategory.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: themeColor,
+                if (errorCategory != 'Query Rejection') ...[
+                  Text(
+                    errorCategory.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: themeColor,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
+                  const SizedBox(height: 4),
+                ],
                 Text(
                   errorText,
                   style: TextStyle(
@@ -2037,38 +2039,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          response.isError
-                              ? Icons.error_outline_rounded
-                              : Icons.auto_awesome,
-                          color: response.isError
-                              ? const Color(0xFFEF4444)
-                              : Colors.amber,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          response.isError
-                              ? 'Query Rejection'
-                              : 'Synthesized Response',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: response.isError
-                                ? const Color(0xFFEF4444)
-                                : Colors.blueGrey,
+                if (response.isError)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Color(0xFFEF4444),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: MarkdownBody(
+                          selectable: true,
+                          data: response.unifiedAnswer,
+                          styleSheet: MarkdownStyleSheet(
+                            p: const TextStyle(
+                              fontSize: 14,
+                              height: 1.5,
+                              color: Color(0xFFEF4444),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            strong: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFEF4444),
+                            ),
+                            listBullet: const TextStyle(
+                              color: Color(0xFFEF4444),
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  )
+                else ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome,
+                            color: Colors.amber,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Synthesized Response',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                        ],
+                      ),
 
-                    // Dynamic visual badges showing true data origin
-                    if (!response.isError)
+                      // Dynamic visual badges showing true data origin
                       Row(
                         children: [
                           if (response.kbAHasData)
@@ -2148,33 +2175,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                         ],
                       ),
-                  ],
-                ),
-                const Divider(height: 20),
-                MarkdownBody(
-                  selectable: true,
-                  data: response.unifiedAnswer,
-                  styleSheet: MarkdownStyleSheet(
-                    p: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: response.isError
-                          ? const Color(0xFFEF4444)
-                          : Colors.black87,
-                    ),
-                    strong: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: response.isError
-                          ? const Color(0xFFEF4444)
-                          : const Color(0xFF1E3A8A),
-                    ),
-                    listBullet: TextStyle(
-                      color: response.isError
-                          ? const Color(0xFFEF4444)
-                          : const Color(0xFF1E3A8A),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  MarkdownBody(
+                    selectable: true,
+                    data: response.unifiedAnswer,
+                    styleSheet: MarkdownStyleSheet(
+                      p: const TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: Colors.black87,
+                      ),
+                      strong: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                      listBullet: const TextStyle(
+                        color: Color(0xFF1E3A8A),
+                      ),
                     ),
                   ),
-                ),
+                ],
                 if (response.sources.isNotEmpty) ...[
                   const Divider(height: 24),
                   Row(
