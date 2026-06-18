@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } on AmplifyException catch (e) {
       debugPrint('AmplifyException AUTH ERROR: ${e.message}');
       // 💡 Surfaces specific AWS Cognito configuration/policy errors right onto your mobile screen
-      setState(() => _errorMessage = 'AWS Cognito: ${e.message}');
+      setState(() => _errorMessage = 'Error: ${e.message}');
     } on HttpException catch (e) {
       debugPrint('HttpException AUTH ERROR: ${e.message}');
       setState(() => _errorMessage = 'Network Error: ${e.message}');

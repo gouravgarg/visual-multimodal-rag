@@ -1,12 +1,12 @@
 class AppConfig {
   static const String appName = String.fromEnvironment(
     'APP_NAME',
-    defaultValue: 'Visual Multimodel AI Agent',
+    defaultValue: 'AI Agent-Gourav Garg',
   );
 
   static const String loginTitle = String.fromEnvironment(
     'LOGIN_TITLE',
-    defaultValue: 'Visual Multimodel AI Agent',
+    defaultValue: 'AI Agent',
   );
 
   static const String loginSubtitle = String.fromEnvironment(
