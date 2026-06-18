@@ -432,27 +432,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String queryText = retryQuery ?? _queryController.text.trim();
     if (queryText.isEmpty && retryQuery == null) return;
 
-    // 1. Prompt for Trade Model selection and validate choice before API invocation
     final String? selectedModel =
         retryModel ?? await _showTradeModelSelectionDialog();
     if (selectedModel == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Colors.amber,
             content: Text(
-              'Validation Error: A Trade Model must be selected before submitting a query.',
+              'Query cancelled: A Trade Model must be selected to submit.',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Colors.black,
               ),
             ),
           ),
         );
       }
-      setState(() {
-        _errorMessage = 'Validation Error: A Trade Model must be selected.';
-      });
       return;
     }
 
