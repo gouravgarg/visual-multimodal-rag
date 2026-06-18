@@ -64,8 +64,13 @@ class ExecutiveTheme {
   static const Color lightCodeBlockBorder = Color(0xFFCBD5E1);
 
   // --- CHAT INPUT BAR ---
-  static const Color darkInputFill = Color(0xFF141416);
-  static const Color lightInputFill = Color(0xFFFFFFFF);
+  static const Color darkInputBarBg = Color(0xFF09090B);      // Pure Obsidian Black (seamless screen-merge)
+  static const Color darkInputBarBorder = Color(0xFF141416);  // Polished Titanium border line
+  static const Color darkInputFill = Color(0xFF141416);       // Sleek Carbon Card fill (stands out slightly as a pill)
+
+  static const Color lightInputBarBg = Color(0xFFFFFFFF);     // High-gloss Pure Marble White
+  static const Color lightInputBarBorder = Color(0xFFE2E8F0); // Subtle silver-grey border
+  static const Color lightInputFill = Color(0xFFF1F5F9);      // Gentle satin grey inner fill
 
   // --- EMPTY STATE GRADIENTS ---
   static const List<Color> darkEmptyStateColors = [Color(0xFF09090B), Color(0xFF0F0C08), Color(0xFF1B160F)];

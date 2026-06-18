@@ -628,7 +628,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1E293B)
+              ? ExecutiveTheme.darkCardBg
               : Colors.white,
           elevation: 4,
         ),
@@ -865,7 +865,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                color: isDark ? ExecutiveTheme.darkCardBg : Colors.white,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
@@ -895,7 +895,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             Icon(
                               Icons.history_rounded,
-                              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                              color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -1014,10 +1014,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                                  color: isDark ? ExecutiveTheme.darkScaffoldBg : const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                    color: isDark ? ExecutiveTheme.darkCardBorder : ExecutiveTheme.lightCardBorder,
                                   ),
                                 ),
                                 child: InkWell(
@@ -1455,7 +1455,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       width: 340,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? ExecutiveTheme.darkCardBg : Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -1482,9 +1482,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                color: isDark ? ExecutiveTheme.darkScaffoldBg : const Color(0xFFF1F5F9),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0),
+                  color: isDark ? ExecutiveTheme.darkCardBorder : ExecutiveTheme.lightCardBorder,
                   width: 1.0,
                 ),
               ),
@@ -1521,7 +1521,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
             Divider(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+              color: isDark ? ExecutiveTheme.darkCardBorder : const Color(0xFFF1F5F9),
               thickness: 1.5,
             ),
             const SizedBox(height: 16),
@@ -1535,7 +1535,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F172A),
+                    color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                     width: 1.0,
                   ),
                 ),
@@ -1544,7 +1544,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F172A),
+                    color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                     letterSpacing: 1.0,
                   ),
                 ),
@@ -1579,10 +1579,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC),
+                  color: isDark ? ExecutiveTheme.darkScaffoldBg : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0),
+                    color: isDark ? ExecutiveTheme.darkCardBorder : ExecutiveTheme.lightCardBorder,
                   ),
                 ),
                 child: Row(
@@ -1615,7 +1615,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0),
+                    color: isDark ? ExecutiveTheme.darkCardBorder : ExecutiveTheme.lightCardBorder,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1786,7 +1786,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: const Color(0xFF111827),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFF1E293B),
+                        color: ExecutiveTheme.darkCardBorder,
                         width: 1.5,
                       ),
                     ),
@@ -2759,10 +2759,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? ExecutiveTheme.darkInputBarBg : ExecutiveTheme.lightInputBarBg,
             border: Border(
               top: BorderSide(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark ? ExecutiveTheme.darkInputBarBorder : ExecutiveTheme.lightInputBarBorder,
               ),
             ),
           ),
@@ -2884,31 +2884,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: TextField(
-                        controller: _queryController,
-                        keyboardType: TextInputType.multiline,
-                        minLines: 1,
-                        maxLines: 5,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black87,
+                      child: CallbackShortcuts(
+                        bindings: <ShortcutActivator, VoidCallback>{
+                          const SingleActivator(LogicalKeyboardKey.enter, control: true): () => _submitAgentQuery(),
+                          const SingleActivator(LogicalKeyboardKey.enter, meta: true): () => _submitAgentQuery(),
+                        },
+                        child: TextField(
+                          controller: _queryController,
+                          keyboardType: TextInputType.multiline,
+                          minLines: 1,
+                          maxLines: 5,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: AppConfig.queryHintText,
+                            hintStyle: TextStyle(
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            filled: true,
+                            fillColor: isDark ? ExecutiveTheme.darkInputFill : ExecutiveTheme.lightInputFill,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onSubmitted: (_) => _submitAgentQuery(),
                         ),
-                        decoration: InputDecoration(
-                          hintText: AppConfig.queryHintText,
-                          hintStyle: TextStyle(
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          filled: true,
-                          fillColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        onSubmitted: (_) => _submitAgentQuery(),
                       ),
                     ),
                     const SizedBox(width: 8),
