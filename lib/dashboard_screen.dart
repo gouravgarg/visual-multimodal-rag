@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -606,6 +606,78 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     }
+  }
+
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Color(0xFF10B981), size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Response copied to clipboard!',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : Colors.white,
+          elevation: 4,
+        ),
+      );
+    }
+  }
+
+  Widget _buildFooterActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onTap,
+    Color? iconColor,
+    Color? bgColor,
+  }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color defaultBg = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.black.withValues(alpha: 0.03);
+    final Color defaultBorder = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.04);
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: bgColor ?? defaultBg,
+        type: MaterialType.button,
+        borderRadius: BorderRadius.circular(10),
+        borderOnForeground: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: bgColor != null ? Colors.transparent : defaultBorder,
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: iconColor,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildModernErrorCard() {
@@ -1942,17 +2014,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildEmptyState() {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final String greetingName = (_userEmail == null || _userEmail!.isEmpty)
         ? 'there'
         : _userEmail!;
 
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF05070D), Color(0xFF111827), Color(0xFF1E3A8A)],
+          colors: isDark
+              ? [const Color(0xFF090D1A), const Color(0xFF111827), const Color(0xFF1E3A8A)]
+              : [const Color(0xFFF8FAFC), const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
         ),
       ),
       child: Center(
@@ -1961,26 +2036,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.auto_awesome, size: 44, color: Colors.amber),
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 48,
+                color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+              ),
               const SizedBox(height: 24),
               Text(
                 'Hi $greetingName,\nWhat do you need?',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 34,
-                  height: 1.18,
-                  color: Colors.white,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 32,
+                  height: 1.2,
+                  letterSpacing: -0.5,
+                  color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 AppConfig.emptyStateSubtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFFC7D2FE),
-                  fontSize: 13,
-                  height: 1.4,
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF1E40AF),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
                 ),
               ),
             ],
@@ -1993,7 +2074,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Continued in Module 3...
   Widget _buildChatBubble(AgentResponse response) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool hasSubmittedFeedback = response.selectedFeedback != 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2003,14 +2083,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           alignment: Alignment.centerRight,
           child: Container(
             margin: const EdgeInsets.only(left: 48, bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E3A8A),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomLeft: Radius.circular(16),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF3B82F6), const Color(0xFF1E3A8A)]
+                    : [const Color(0xFF1E3A8A), const Color(0xFF2563EB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E3A8A).withValues(alpha: isDark ? 0.3 : 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -2082,15 +2175,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
 
         // Unified Knowledge Base Synthesized Card
-        Card(
-          elevation: 2,
+        Container(
           margin: const EdgeInsets.only(bottom: 24),
-          color: response.isError ? const Color(0xFFFEF2F2) : null,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: response.isError
-                ? const BorderSide(color: Color(0xFFFCA5A5), width: 1.5)
-                : BorderSide.none,
+          decoration: BoxDecoration(
+            color: response.isError
+                ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.15) : const Color(0xFFFEF2F2))
+                : (isDark ? const Color(0xFF1E293B) : Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: response.isError
+                  ? const Color(0xFFEF4444).withValues(alpha: isDark ? 0.5 : 0.3)
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -2134,23 +2238,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.auto_awesome,
-                            color: Colors.amber,
-                            size: 18,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [const Color(0xFF2563EB), const Color(0xFF7C3AED)]
+                                : [const Color(0xFF3B82F6), const Color(0xFF8B5CF6)],
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Synthesized Response',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.blueGrey,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.3 : 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome,
+                              color: Colors.amber,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'AI CO-PILOT',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                                letterSpacing: 0.8,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
 
                       // Dynamic visual badges showing true data origin
@@ -2158,63 +2282,109 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           if (response.kbAHasData)
                             Container(
-                              margin: const EdgeInsets.only(left: 4),
+                              margin: const EdgeInsets.only(left: 6),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                                horizontal: 8,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'α Alpha',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
+                                    : const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                                      : const Color(0xFFBFDBFE),
+                                  width: 1,
                                 ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.layers_outlined,
+                                    size: 11,
+                                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'α Alpha',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           if (response.kbBHasData)
                             Container(
-                              margin: const EdgeInsets.only(left: 4),
+                              margin: const EdgeInsets.only(left: 6),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                                horizontal: 8,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.purple.shade50,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'β Beta',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.purple,
-                                  fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? const Color(0xFF581C87).withValues(alpha: 0.3)
+                                    : const Color(0xFFFDF4FF),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF9333EA).withValues(alpha: 0.4)
+                                      : const Color(0xFFE9D5FF),
+                                  width: 1,
                                 ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.analytics_outlined,
+                                    size: 11,
+                                    color: isDark ? const Color(0xFFC084FC) : const Color(0xFF7E22CE),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'β Beta',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? const Color(0xFFC084FC) : const Color(0xFF7E22CE),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           // 💡 New Pill: Displays when BOTH KBs are false, indicating a master database hit
                           if (!response.kbAHasData && !response.kbBHasData)
                             Container(
-                              margin: const EdgeInsets.only(left: 4),
+                              margin: const EdgeInsets.only(left: 6),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
+                                horizontal: 8,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(4),
+                                color: isDark
+                                    ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                                    : const Color(0xFFECFDF5),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isDark
+                                      ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                                      : const Color(0xFFA7F3D0),
+                                  width: 1,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.verified_user_outlined,
-                                    color: Colors.green,
-                                    size: 12,
+                                    color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                                    size: 11,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -2222,9 +2392,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             response.kbModel!.isNotEmpty)
                                         ? response.kbModel!
                                         : 'Verified factual database record',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
-                                      color: Colors.green,
+                                      color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -2259,18 +2429,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const Divider(height: 24),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.menu_book,
-                        color: Color(0xFF1E3A8A),
-                        size: 16,
+                      Icon(
+                        Icons.explore_outlined,
+                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Retrieved References (${response.sources.length})',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Color(0xFF475569),
+                        'Retrieved References',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          letterSpacing: 0.5,
+                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
+                              : const Color(0xFFE0F2FE),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF38BDF8).withValues(alpha: 0.3)
+                                : const Color(0xFFbae6fd),
+                          ),
+                        ),
+                        child: Text(
+                          '${response.sources.length}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                          ),
                         ),
                       ),
                     ],
@@ -2284,110 +2478,196 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
                 if (!response.isError) ...[
-                  const Divider(height: 24),
+                  const Divider(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (!hasSubmittedFeedback)
-                        const Text(
-                          'Was this answer helpful?',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        )
-                      else
-                        const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline_rounded,
-                              size: 14,
-                              color: Colors.grey,
+                      // LEFT SIDE: Generation Time & Selection confirmation
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (response.processingTimeSeconds != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.03),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.08)
+                                      : Colors.black.withValues(alpha: 0.04),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.bolt_rounded,
+                                    size: 13,
+                                    color: isDark
+                                        ? const Color(0xFF60A5FA)
+                                        : const Color(0xFF1E3A8A),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${response.processingTimeSeconds!.toStringAsFixed(1)}s response',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark
+                                          ? Colors.grey[300]
+                                          : Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 8),
+                          ],
+                          
+                          // Custom subtle dynamic badge showing state of feedback
+                          if (response.selectedFeedback == 1)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    size: 13,
+                                    color: Color(0xFF10B981),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Helpful',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (response.selectedFeedback == 2)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF43F5E).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFF43F5E).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline_rounded,
+                                    size: 13,
+                                    color: Color(0xFFF43F5E),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Feedback recorded',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFF43F5E),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
                             Text(
-                              'Thank you!',
+                              'Was this helpful?',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey,
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
                               ),
                             ),
-                          ],
-                        ),
-                      if (response.processingTimeSeconds != null)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.timer_outlined,
-                              size: 13,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Time: ${response.processingTimeSeconds!.toStringAsFixed(1)}s',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
+                      ),
+                      
+                      // RIGHT SIDE: Action Buttons (Copy, Thumbs Up, Thumbs Down)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Copy Button (Subtle & Glassy)
+                          _buildFooterActionButton(
+                            icon: Icons.copy_all_rounded,
+                            tooltip: 'Copy unified answer',
+                            onTap: () => _copyToClipboard(response.unifiedAnswer),
+                            iconColor: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          const SizedBox(width: 8),
+                          
+                          // Thumbs Up (Helpful)
+                          _buildFooterActionButton(
+                            icon: response.selectedFeedback == 1
+                                ? Icons.thumb_up_rounded
+                                : Icons.thumb_up_outlined,
+                            tooltip: response.selectedFeedback == 1
+                                ? 'Helpful'
+                                : 'Mark as helpful',
+                            iconColor: response.selectedFeedback == 1
+                                ? const Color(0xFF10B981)
+                                : response.selectedFeedback == 2
+                                    ? (isDark ? Colors.white10 : Colors.black12)
+                                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                            bgColor: response.selectedFeedback == 1
+                                ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                                : null,
+                            onTap: response.selectedFeedback != 0
+                                ? null
+                                : () => _submitFeedback(response, true),
+                          ),
+                          const SizedBox(width: 8),
+                          
+                          // Thumbs Down (Not Helpful)
+                          _buildFooterActionButton(
+                            icon: response.selectedFeedback == 2
+                                ? Icons.thumb_down_rounded
+                                : Icons.thumb_down_outlined,
+                            tooltip: response.selectedFeedback == 2
+                                ? 'Feedback recorded'
+                                : 'Mark as unhelpful',
+                            iconColor: response.selectedFeedback == 2
+                                ? const Color(0xFFF43F5E)
+                                : response.selectedFeedback == 1
+                                    ? (isDark ? Colors.white10 : Colors.black12)
+                                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                            bgColor: response.selectedFeedback == 2
+                                ? const Color(0xFFF43F5E).withValues(alpha: 0.15)
+                                : null,
+                            onTap: response.selectedFeedback != 0
+                                ? null
+                                : () => _submitFeedback(response, false),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  if (!hasSubmittedFeedback) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _submitFeedback(response, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.grey.shade200,
-                              disabledForegroundColor: Colors.grey.shade500,
-                            ),
-                            icon: const Icon(
-                              Icons.thumb_up_alt_outlined,
-                              size: 14,
-                            ),
-                            label: const Text(
-                              'Helpful',
-                              style: TextStyle(fontSize: 11),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _submitFeedback(response, false),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.grey.shade200,
-                              disabledForegroundColor: Colors.grey.shade500,
-                            ),
-                            icon: const Icon(
-                              Icons.thumb_down_alt_outlined,
-                              size: 14,
-                            ),
-                            label: const Text(
-                              'Not Helpful',
-                              style: TextStyle(fontSize: 11),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ],
             ),
@@ -2683,14 +2963,21 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
 
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
-          width: 1.0,
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1.2,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2703,60 +2990,80 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                     });
                   }
                 : null,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
+                      horizontal: 8,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: isTiger
-                          ? Colors.amber.shade100
-                          : Colors.blue.shade100,
-                      borderRadius: BorderRadius.circular(4),
+                          ? (isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : const Color(0xFFFEF3C7))
+                          : (isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.15) : const Color(0xFFEFF6FF)),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isTiger
+                            ? (isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.3) : const Color(0xFFFDE68A))
+                            : (isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.3) : const Color(0xFFBFDBFE)),
+                      ),
                     ),
                     child: Text(
                       '${source.kbModel} Catalog',
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: isTiger
-                            ? Colors.amber.shade900
-                            : Colors.blue.shade900,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Match: $matchPercent%',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade700,
+                            ? (isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309))
+                            : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8)),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFFA7F3D0),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.radar_rounded,
+                          size: 11,
+                          color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Match: $matchPercent%',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       '📄 $fileName',
                       style: TextStyle(
-                        fontSize: 10,
-                        color: isDark ? Colors.white70 : Colors.black54,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.2,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2770,30 +3077,43 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                           : 'Open reference document',
                       child: InkWell(
                         onTap: isExpired ? null : () => _openPresignedUrl(presignedUrl),
-                        borderRadius: BorderRadius.circular(4),
-                        child: Padding(
+                        borderRadius: BorderRadius.circular(16),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 4,
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isExpired
+                                ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100)
+                                : (isDark ? const Color(0xFF0284C7).withValues(alpha: 0.2) : const Color(0xFFE0F2FE)),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isExpired
+                                  ? (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300)
+                                  : (isDark ? const Color(0xFF38BDF8).withValues(alpha: 0.4) : const Color(0xFFbae6fd)),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                isExpired ? Icons.link_off : Icons.open_in_new,
-                                color: isExpired ? Colors.grey : Colors.blue,
-                                size: 14,
+                                isExpired ? Icons.link_off_rounded : Icons.open_in_new_rounded,
+                                color: isExpired
+                                    ? Colors.grey
+                                    : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1)),
+                                size: 13,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               Text(
-                                isExpired ? 'Expired' : 'Open',
+                                isExpired ? 'Expired' : 'View Source',
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  color: isExpired ? Colors.grey : Colors.blue.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: isExpired
-                                      ? TextDecoration.none
-                                      : TextDecoration.underline,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: isExpired
+                                      ? Colors.grey
+                                      : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1)),
                                 ),
                               ),
                             ],
