@@ -1,11 +1,11 @@
 {
-    "name": "Shere Punjab Group AI",
-    "short_name": "Shere Punjab Group AI",
+    "name": "Visual Multimodel AI Agent",
+    "short_name": "Visual AI Agent",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Shere Punjab Group AI Sonalika Spare Parts Catalog.",
+    "description": "Visual Multimodel AI Agent Spare Parts Catalog.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

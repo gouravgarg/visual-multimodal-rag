@@ -1,4 +1,4 @@
-# Sonalika Knowledge Agent
+# Visual Multimodel AI Agent
 
 Flutter application for authenticated catalogue search and answer feedback.
 
@@ -19,14 +19,14 @@ Required:
 Optional:
 
 ```bash
---dart-define=APP_NAME="SherePunjabGroup AI"
---dart-define=LOGIN_TITLE="Shere Punjab Group"
---dart-define=LOGIN_SUBTITLE="Sonalika Agent"
+--dart-define=APP_NAME="Gourav Garg AI"
+--dart-define=LOGIN_TITLE="Gourav Garg"
+--dart-define=LOGIN_SUBTITLE="Visual Multimodel AI Agent"
 --dart-define=APP_VERSION=1.0
 --dart-define=APP_ENVIRONMENT=UAT
 --dart-define=QUERY_ENDPOINT=/query
 --dart-define=FEEDBACK_ENDPOINT=/feedback
---dart-define=EMPTY_STATE_TITLE="Ask anything about Sonalika Catalogues"
+--dart-define=EMPTY_STATE_TITLE="Ask anything about Visual Multimodel Catalogues"
 --dart-define=EMPTY_STATE_SUBTITLE="Your prompt will resolve across available knowledge repositories securely."
 --dart-define=QUERY_HINT_TEXT="Ask your technical engine question..."
 --dart-define=ABOUT_SCREEN_STYLE=MinimalistSeal # Layout options for the Premium Developer card: SapphirePlaque, MinimalistSeal, CyberGlow
