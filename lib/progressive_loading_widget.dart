@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'executive_theme.dart';
 
 enum StageStatus { waiting, inProgress, completed }
 
@@ -170,12 +171,17 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: isDark ? ExecutiveTheme.darkCardBg : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? ExecutiveTheme.darkCardBorder : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -183,21 +189,21 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
         children: [
           Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 18,
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF1E3A8A),
+                  color: primaryColor,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
                 'Processing Request (${_elapsedSeconds}s)',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: primaryColor,
                 ),
               ),
             ],
@@ -217,25 +223,33 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
+                        color: isDark
+                            ? const Color(0xFF2E2416)
+                            : Colors.amber.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.shade200),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFFC5A059).withValues(alpha: 0.3)
+                              : Colors.amber.shade200,
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
                             Icons.info_outline_rounded,
-                            color: Colors.amber.shade800,
+                            color: isDark ? const Color(0xFFD4B170) : Colors.amber.shade800,
                             size: 20,
                           ),
                           const SizedBox(width: 10),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'This is taking a little longer because the system is conducting a deep search across the entire part catalogue.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF78350F),
+                                color: isDark
+                                    ? const Color(0xFFF3E8EE)
+                                    : const Color(0xFF78350F),
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
                               ),
@@ -253,6 +267,8 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
   }
 
   Widget _buildStageCard(ProgressiveStage stage) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
     final bool isCompleted = stage.status == StageStatus.completed;
     final bool isInProgress = stage.status == StageStatus.inProgress;
 
@@ -264,26 +280,26 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
     double elevation;
 
     if (isCompleted) {
-      cardBgColor = Colors.white;
-      borderColor = Colors.green.shade100;
-      iconColor = Colors.green.shade600;
-      titleColor = Colors.grey.shade800;
-      descColor = Colors.grey.shade500;
+      cardBgColor = isDark ? ExecutiveTheme.darkCardBg : Colors.white;
+      borderColor = isDark ? Colors.green.withValues(alpha: 0.3) : Colors.green.shade100;
+      iconColor = isDark ? ExecutiveTheme.successGreen : Colors.green.shade600;
+      titleColor = isDark ? ExecutiveTheme.darkTextPrimary : Colors.grey.shade800;
+      descColor = isDark ? ExecutiveTheme.darkTextSecondary.withValues(alpha: 0.7) : Colors.grey.shade500;
       elevation = 0;
     } else if (isInProgress) {
-      cardBgColor = Colors.white;
-      borderColor = const Color(0xFF1E3A8A).withValues(alpha: 0.3);
-      iconColor = const Color(0xFF1E3A8A);
-      titleColor = const Color(0xFF1E3A8A);
-      descColor = Colors.grey.shade700;
+      cardBgColor = isDark ? const Color(0xFF1C1C1F) : Colors.white;
+      borderColor = primaryColor.withValues(alpha: 0.3);
+      iconColor = primaryColor;
+      titleColor = primaryColor;
+      descColor = isDark ? ExecutiveTheme.darkTextPrimary : Colors.grey.shade700;
       elevation = 2;
     } else {
       // Waiting
-      cardBgColor = Colors.grey.shade50.withValues(alpha: 0.5);
-      borderColor = Colors.grey.shade100;
-      iconColor = Colors.grey.shade300;
-      titleColor = Colors.grey.shade400;
-      descColor = Colors.grey.shade400;
+      cardBgColor = isDark ? Colors.black26 : Colors.grey.shade50.withValues(alpha: 0.5);
+      borderColor = isDark ? ExecutiveTheme.darkCardBorder : Colors.grey.shade100;
+      iconColor = isDark ? Colors.grey.shade700 : Colors.grey.shade300;
+      titleColor = isDark ? Colors.grey.shade600 : Colors.grey.shade400;
+      descColor = isDark ? Colors.grey.shade600 : Colors.grey.shade400;
       elevation = 0;
     }
 
@@ -297,7 +313,7 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
         boxShadow: elevation > 0
             ? [
                 BoxShadow(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                  color: primaryColor.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -314,9 +330,9 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isInProgress
-                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.08)
+                    ? primaryColor.withValues(alpha: 0.08)
                     : isCompleted
-                    ? Colors.green.shade50
+                    ? (isDark ? Colors.green.withValues(alpha: 0.1) : Colors.green.shade50)
                     : Colors.transparent,
                 shape: BoxShape.circle,
               ),
@@ -359,14 +375,12 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
                   ),
                   if (isInProgress) ...[
                     const SizedBox(height: 10),
-                    const ClipRRect(
-                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                    ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(4)),
                       child: LinearProgressIndicator(
                         minHeight: 2.5,
-                        backgroundColor: Color(0xFFEFF6FF),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFF1E3A8A),
-                        ),
+                        backgroundColor: isDark ? Colors.grey.shade900 : const Color(0xFFEFF6FF),
+                        valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                       ),
                     ),
                   ],
@@ -386,17 +400,17 @@ class _ProgressiveLoadingWidgetState extends State<ProgressiveLoadingWidget> {
                       size: 20,
                     )
                   : isInProgress
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF1E3A8A),
+                        color: primaryColor,
                       ),
                     )
                   : Icon(
                       Icons.radio_button_unchecked_rounded,
-                      color: Colors.grey.shade300,
+                      color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
                       size: 16,
                     ),
             ),

@@ -96,7 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+        foregroundColor: Theme.of(context).primaryColor,
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -122,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -152,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _isPasswordVisible
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                              color: Theme.of(context).primaryColor,
                             ),
                             onPressed: () {
                               setState(() {
@@ -198,9 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ElevatedButton(
                       onPressed: _isLoading ? null : _handleRegisterSubmission,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark
-                            ? Theme.of(context).colorScheme.primary
-                            : const Color(0xFF1E3A8A),
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: isDark ? Colors.black : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),

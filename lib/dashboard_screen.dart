@@ -15,6 +15,7 @@ import 'progressive_loading_widget.dart';
 import 'search_history_service.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
+import 'executive_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -250,7 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1E3A8A), Color(0xFF0F172A)],
+                    colors: [Color(0xFF1F1A12), Color(0xFF0C0905)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -274,15 +275,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.blueAccent.withValues(alpha: 0.15),
+                        color: const Color(0xFFD4B170).withValues(alpha: 0.15),
                         border: Border.all(
-                          color: Colors.blueAccent,
+                          color: const Color(0xFFD4B170),
                           width: 1.5,
                         ),
                       ),
                       child: const Icon(
                         Icons.swap_horiz_rounded,
-                        color: Colors.blueAccent,
+                        color: Color(0xFFD4B170),
                         size: 32,
                       ),
                     ),
@@ -318,12 +319,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.blueAccent.withValues(alpha: 0.15)
+                                ? const Color(0xFFD4B170).withValues(alpha: 0.15)
                                 : Colors.white.withValues(alpha: 0.04),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected
-                                  ? Colors.blueAccent
+                                  ? const Color(0xFFD4B170)
                                   : Colors.white.withValues(alpha: 0.08),
                               width: 1.5,
                             ),
@@ -335,7 +336,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ? Icons.radio_button_checked
                                     : Icons.radio_button_off,
                                 color: isSelected
-                                    ? Colors.blueAccent
+                                    ? const Color(0xFFD4B170)
                                     : Colors.white54,
                                 size: 20,
                               ),
@@ -397,8 +398,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ? null
                                 : () => Navigator.of(dialogContext).pop(),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              foregroundColor: Colors.white,
+                              backgroundColor: const Color(0xFFD4B170),
+                              foregroundColor: Colors.black,
                               disabledBackgroundColor: Colors.white12,
                               disabledForegroundColor: Colors.white30,
                               shape: RoundedRectangleBorder(
@@ -1181,7 +1182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: 340,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+          colors: [Color(0xFF1F1A12), Color(0xFF0C0905)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1197,7 +1198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             offset: const Offset(0, 10),
           ),
           BoxShadow(
-            color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
+            color: const Color(0xFFD4B170).withValues(alpha: 0.15),
             blurRadius: 25,
             spreadRadius: 2,
           ),
@@ -1912,13 +1913,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? ExecutiveTheme.darkScaffoldBg : ExecutiveTheme.lightScaffoldBg,
       appBar: AppBar(
         title: const Text(
           AppConfig.appName,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFF1E3A8A),
+        backgroundColor: isDark ? ExecutiveTheme.darkScaffoldBg : ExecutiveTheme.lightPrimaryObsidian,
         foregroundColor: Colors.white,
         actions: [
           PopupMenuButton<ThemeMode>(
@@ -2015,7 +2016,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildEmptyState() {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final String greetingName = (_userEmail == null || _userEmail!.isEmpty)
+    final String greetingName = _userEmail == null || _userEmail!.trim().isEmpty
         ? 'there'
         : _userEmail!;
 
@@ -2026,8 +2027,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: isDark
-              ? [const Color(0xFF090D1A), const Color(0xFF111827), const Color(0xFF1E3A8A)]
-              : [const Color(0xFFF8FAFC), const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)],
+              ? ExecutiveTheme.darkEmptyStateColors
+              : ExecutiveTheme.lightEmptyStateColors,
         ),
       ),
       child: Center(
@@ -2039,7 +2040,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Icon(
                 Icons.auto_awesome_rounded,
                 size: 48,
-                color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
               ),
               const SizedBox(height: 24),
               Text(
@@ -2050,7 +2051,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontSize: 32,
                   height: 1.2,
                   letterSpacing: -0.5,
-                  color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+                  color: isDark ? Colors.white : ExecutiveTheme.lightPrimaryObsidian,
                 ),
               ),
               const SizedBox(height: 16),
@@ -2058,7 +2059,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 AppConfig.emptyStateSubtitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF1E40AF),
+                  color: isDark ? ExecutiveTheme.darkTextSecondary : ExecutiveTheme.lightTextSecondary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   height: 1.5,
@@ -2087,8 +2088,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: isDark
-                    ? [const Color(0xFF3B82F6), const Color(0xFF1E3A8A)]
-                    : [const Color(0xFF1E3A8A), const Color(0xFF2563EB)],
+                    ? ExecutiveTheme.darkUserBubbleColors
+                    : ExecutiveTheme.lightUserBubbleColors,
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -2099,7 +2100,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: isDark ? 0.3 : 0.15),
+                  color: isDark
+                      ? ExecutiveTheme.darkAccentCognac.withValues(alpha: 0.25)
+                      : ExecutiveTheme.lightPrimaryObsidian.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -2165,9 +2168,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ],
-                Text(
+                 Text(
                   response.query,
-                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF09090B) : Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -2180,12 +2187,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           decoration: BoxDecoration(
             color: response.isError
                 ? (isDark ? const Color(0xFF7F1D1D).withValues(alpha: 0.15) : const Color(0xFFFEF2F2))
-                : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                : (isDark ? ExecutiveTheme.darkCardBg : ExecutiveTheme.lightCardBg),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: response.isError
-                  ? const Color(0xFFEF4444).withValues(alpha: isDark ? 0.5 : 0.3)
-                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  ? ExecutiveTheme.errorRed.withValues(alpha: isDark ? 0.5 : 0.3)
+                  : (isDark ? ExecutiveTheme.darkCardBorder : ExecutiveTheme.lightCardBorder),
               width: 1.2,
             ),
             boxShadow: [
@@ -2207,7 +2214,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       const Icon(
                         Icons.error_outline_rounded,
-                        color: Color(0xFFEF4444),
+                        color: ExecutiveTheme.errorRed,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -2219,15 +2226,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             p: const TextStyle(
                               fontSize: 14,
                               height: 1.5,
-                              color: Color(0xFFEF4444),
+                              color: ExecutiveTheme.errorRed,
                               fontWeight: FontWeight.w600,
                             ),
                             strong: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFEF4444),
+                              color: ExecutiveTheme.errorRed,
                             ),
                             listBullet: const TextStyle(
-                              color: Color(0xFFEF4444),
+                              color: ExecutiveTheme.errorRed,
                             ),
                           ),
                         ),
@@ -2238,18 +2245,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
+                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: isDark
-                                ? [const Color(0xFF2563EB), const Color(0xFF7C3AED)]
-                                : [const Color(0xFF3B82F6), const Color(0xFF8B5CF6)],
+                                ? ExecutiveTheme.darkUserBubbleColors
+                                : ExecutiveTheme.lightUserBubbleColors,
                           ),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF8B5CF6).withValues(alpha: isDark ? 0.3 : 0.15),
+                              color: isDark
+                                  ? ExecutiveTheme.darkAccentCognac.withValues(alpha: 0.3)
+                                  : ExecutiveTheme.lightPrimaryObsidian.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -2258,19 +2267,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.auto_awesome,
-                              color: Colors.amber,
+                              color: isDark ? const Color(0xFF09090B) : Colors.amber,
                               size: 14,
                             ),
                             const SizedBox(width: 6),
-                            const Text(
+                            Text(
                               'AI CO-PILOT',
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 11,
                                 letterSpacing: 0.8,
-                                color: Colors.white,
+                                color: isDark ? const Color(0xFF09090B) : Colors.white,
                               ),
                             ),
                           ],
@@ -2289,13 +2298,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
-                                    : const Color(0xFFEFF6FF),
+                                    ? ExecutiveTheme.darkAlphaBg
+                                    : ExecutiveTheme.lightAlphaBg,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isDark
-                                      ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
-                                      : const Color(0xFFBFDBFE),
+                                      ? ExecutiveTheme.darkAlphaBorder
+                                      : ExecutiveTheme.lightAlphaBorder,
                                   width: 1,
                                 ),
                               ),
@@ -2305,14 +2314,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Icon(
                                     Icons.layers_outlined,
                                     size: 11,
-                                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8),
+                                    color: isDark ? ExecutiveTheme.darkAlphaText : ExecutiveTheme.lightAlphaText,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'α Alpha',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8),
+                                      color: isDark ? ExecutiveTheme.darkAlphaText : ExecutiveTheme.lightAlphaText,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -2328,13 +2337,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF581C87).withValues(alpha: 0.3)
-                                    : const Color(0xFFFDF4FF),
+                                    ? ExecutiveTheme.darkBetaBg
+                                    : ExecutiveTheme.lightBetaBg,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isDark
-                                      ? const Color(0xFF9333EA).withValues(alpha: 0.4)
-                                      : const Color(0xFFE9D5FF),
+                                      ? ExecutiveTheme.darkBetaBorder
+                                      : ExecutiveTheme.lightBetaBorder,
                                   width: 1,
                                 ),
                               ),
@@ -2344,14 +2353,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   Icon(
                                     Icons.analytics_outlined,
                                     size: 11,
-                                    color: isDark ? const Color(0xFFC084FC) : const Color(0xFF7E22CE),
+                                    color: isDark ? ExecutiveTheme.darkBetaText : ExecutiveTheme.lightBetaText,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'β Beta',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: isDark ? const Color(0xFFC084FC) : const Color(0xFF7E22CE),
+                                      color: isDark ? ExecutiveTheme.darkBetaText : ExecutiveTheme.lightBetaText,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -2368,13 +2377,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? const Color(0xFF064E3B).withValues(alpha: 0.3)
-                                    : const Color(0xFFECFDF5),
+                                    ? ExecutiveTheme.darkMatchBg
+                                    : ExecutiveTheme.lightMatchBg,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isDark
-                                      ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                                      : const Color(0xFFA7F3D0),
+                                      ? ExecutiveTheme.darkMatchBorder
+                                      : ExecutiveTheme.lightMatchBorder,
                                   width: 1,
                                 ),
                               ),
@@ -2383,7 +2392,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 children: [
                                   Icon(
                                     Icons.verified_user_outlined,
-                                    color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                                    color: isDark ? ExecutiveTheme.darkMatchText : ExecutiveTheme.lightMatchText,
                                     size: 11,
                                   ),
                                   const SizedBox(width: 4),
@@ -2394,7 +2403,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         : 'Verified factual database record',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                                      color: isDark ? ExecutiveTheme.darkMatchText : ExecutiveTheme.lightMatchText,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -2417,10 +2426,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       strong: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                       ),
                       listBullet: TextStyle(
-                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
+                      ),
+                      blockquote: TextStyle(
+                        fontSize: 13,
+                        height: 1.5,
+                        fontStyle: FontStyle.italic,
+                        color: isDark ? ExecutiveTheme.darkBlockquoteText : ExecutiveTheme.lightBlockquoteText,
+                      ),
+                      blockquoteDecoration: BoxDecoration(
+                        color: isDark ? ExecutiveTheme.darkBlockquoteBg : ExecutiveTheme.lightBlockquoteBg,
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                        border: Border(
+                          left: BorderSide(
+                            color: isDark ? ExecutiveTheme.darkBlockquoteBorder : ExecutiveTheme.lightBlockquoteBorder,
+                            width: 4,
+                          ),
+                        ),
+                      ),
+                      code: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12.5,
+                        color: isDark ? ExecutiveTheme.darkCodeText : ExecutiveTheme.lightCodeText,
+                        backgroundColor: isDark ? ExecutiveTheme.darkCodeBg : ExecutiveTheme.lightCodeBg,
+                      ),
+                      codeblockDecoration: BoxDecoration(
+                        color: isDark ? ExecutiveTheme.darkCodeBlockBg : ExecutiveTheme.lightCodeBlockBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isDark ? ExecutiveTheme.darkCodeBlockBorder : ExecutiveTheme.lightCodeBlockBorder,
+                        ),
+                      ),
+                      tableBody: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
+                      ),
+                      tableHead: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? ExecutiveTheme.darkTableHeaderText : ExecutiveTheme.lightTableHeaderText,
+                      ),
+                      tableBorder: TableBorder.all(
+                        color: isDark ? ExecutiveTheme.darkTableBorder : ExecutiveTheme.lightTableBorder,
+                        width: 1.0,
+                      ),
+                      h1: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
+                      ),
+                      h2: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
+                      ),
+                      h3: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
+                      ),
+                      h4: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                       ),
                     ),
                   ),
@@ -2431,7 +2505,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Icon(
                         Icons.explore_outlined,
-                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -2441,7 +2515,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fontWeight: FontWeight.w800,
                           fontSize: 14,
                           letterSpacing: 0.5,
-                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                          color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -2449,13 +2523,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
-                              : const Color(0xFFE0F2FE),
+                              ? ExecutiveTheme.darkPrimaryGold.withValues(alpha: 0.15)
+                              : const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isDark
-                                ? const Color(0xFF38BDF8).withValues(alpha: 0.3)
-                                : const Color(0xFFbae6fd),
+                                ? ExecutiveTheme.darkPrimaryGold.withValues(alpha: 0.3)
+                                : const Color(0xFFFDE68A),
                           ),
                         ),
                         child: Text(
@@ -2463,7 +2537,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1),
+                            color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                           ),
                         ),
                       ),
@@ -2510,8 +2584,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Icons.bolt_rounded,
                                     size: 13,
                                     color: isDark
-                                        ? const Color(0xFF60A5FA)
-                                        : const Color(0xFF1E3A8A),
+                                        ? ExecutiveTheme.darkPrimaryGold
+                                        : ExecutiveTheme.lightAccentGold,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -2803,7 +2877,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     IconButton(
                       icon: Icon(
                         Icons.add_photo_alternate_outlined,
-                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                        color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                       ),
                       tooltip: 'Attach photos (PNG, JPG, JPEG only)',
                       onPressed: _pickImages,
@@ -2839,7 +2913,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(width: 8),
                     CircleAvatar(
-                      backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                      backgroundColor: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightPrimaryObsidian,
                       child: IconButton(
                         icon: Icon(
                           Icons.send,
@@ -2965,10 +3039,10 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: isDark ? ExecutiveTheme.darkCardBg : ExecutiveTheme.lightCardBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: isDark ? ExecutiveTheme.darkCardBorder : ExecutiveTheme.lightCardBorder,
           width: 1.2,
         ),
         boxShadow: [
@@ -3002,13 +3076,13 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                     ),
                     decoration: BoxDecoration(
                       color: isTiger
-                          ? (isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.15) : const Color(0xFFFEF3C7))
-                          : (isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.15) : const Color(0xFFEFF6FF)),
+                          ? (isDark ? ExecutiveTheme.darkAlphaBg : ExecutiveTheme.lightAlphaBg)
+                          : (isDark ? ExecutiveTheme.darkBetaBg : ExecutiveTheme.lightBetaBg),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: isTiger
-                            ? (isDark ? const Color(0xFFF59E0B).withValues(alpha: 0.3) : const Color(0xFFFDE68A))
-                            : (isDark ? const Color(0xFF3B82F6).withValues(alpha: 0.3) : const Color(0xFFBFDBFE)),
+                            ? (isDark ? ExecutiveTheme.darkAlphaBorder : ExecutiveTheme.lightAlphaBorder)
+                            : (isDark ? ExecutiveTheme.darkBetaBorder : ExecutiveTheme.lightBetaBorder),
                       ),
                     ),
                     child: Text(
@@ -3017,8 +3091,8 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: isTiger
-                            ? (isDark ? const Color(0xFFF59E0B) : const Color(0xFFB45309))
-                            : (isDark ? const Color(0xFF60A5FA) : const Color(0xFF1D4ED8)),
+                            ? (isDark ? ExecutiveTheme.darkAlphaText : ExecutiveTheme.lightAlphaText)
+                            : (isDark ? ExecutiveTheme.darkBetaText : ExecutiveTheme.lightBetaText),
                       ),
                     ),
                   ),
@@ -3029,10 +3103,10 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFFECFDF5),
+                      color: isDark ? ExecutiveTheme.darkMatchBg : ExecutiveTheme.lightMatchBg,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFFA7F3D0),
+                        color: isDark ? ExecutiveTheme.darkMatchBorder : ExecutiveTheme.lightMatchBorder,
                       ),
                     ),
                     child: Row(
@@ -3041,7 +3115,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                         Icon(
                           Icons.radar_rounded,
                           size: 11,
-                          color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                          color: isDark ? ExecutiveTheme.darkMatchText : ExecutiveTheme.lightMatchText,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -3049,7 +3123,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? const Color(0xFF34D399) : const Color(0xFF047857),
+                            color: isDark ? ExecutiveTheme.darkMatchText : ExecutiveTheme.lightMatchText,
                           ),
                         ),
                       ],
@@ -3061,7 +3135,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                       '📄 $fileName',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        color: isDark ? ExecutiveTheme.darkTextPrimary : ExecutiveTheme.lightTextPrimary,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.2,
                       ),
@@ -3087,12 +3161,12 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                           decoration: BoxDecoration(
                             color: isExpired
                                 ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100)
-                                : (isDark ? const Color(0xFF0284C7).withValues(alpha: 0.2) : const Color(0xFFE0F2FE)),
+                                : (isDark ? ExecutiveTheme.darkViewSourceBg : ExecutiveTheme.lightViewSourceBg),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isExpired
                                   ? (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300)
-                                  : (isDark ? const Color(0xFF38BDF8).withValues(alpha: 0.4) : const Color(0xFFbae6fd)),
+                                  : (isDark ? ExecutiveTheme.darkViewSourceBorder : ExecutiveTheme.lightViewSourceBorder),
                             ),
                           ),
                           child: Row(
@@ -3102,7 +3176,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                                 isExpired ? Icons.link_off_rounded : Icons.open_in_new_rounded,
                                 color: isExpired
                                     ? Colors.grey
-                                    : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1)),
+                                    : (isDark ? ExecutiveTheme.darkViewSourceText : ExecutiveTheme.lightViewSourceText),
                                 size: 13,
                               ),
                               const SizedBox(width: 6),
@@ -3113,7 +3187,7 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                                   fontWeight: FontWeight.w800,
                                   color: isExpired
                                       ? Colors.grey
-                                      : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0369A1)),
+                                      : (isDark ? ExecutiveTheme.darkViewSourceText : ExecutiveTheme.lightViewSourceText),
                                 ),
                               ),
                             ],
@@ -3162,10 +3236,42 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                           ),
                           strong: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                            color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                           ),
                           listBullet: TextStyle(
-                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                            color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
+                          ),
+                          blockquote: TextStyle(
+                            fontSize: 11.5,
+                            height: 1.4,
+                            fontStyle: FontStyle.italic,
+                            color: isDark ? ExecutiveTheme.darkBlockquoteText : ExecutiveTheme.lightBlockquoteText,
+                          ),
+                          blockquoteDecoration: BoxDecoration(
+                            color: isDark ? ExecutiveTheme.darkBlockquoteBg : ExecutiveTheme.lightBlockquoteBg,
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(6),
+                              bottomRight: Radius.circular(6),
+                            ),
+                            border: Border(
+                              left: BorderSide(
+                                color: isDark ? ExecutiveTheme.darkBlockquoteBorder : ExecutiveTheme.lightBlockquoteBorder,
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          code: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            color: isDark ? ExecutiveTheme.darkCodeText : ExecutiveTheme.lightCodeText,
+                            backgroundColor: isDark ? ExecutiveTheme.darkCodeBg : ExecutiveTheme.lightCodeBg,
+                          ),
+                          codeblockDecoration: BoxDecoration(
+                            color: isDark ? ExecutiveTheme.darkCodeBlockBg : ExecutiveTheme.lightCodeBlockBg,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isDark ? ExecutiveTheme.darkCodeBlockBorder : ExecutiveTheme.lightCodeBlockBorder,
+                            ),
                           ),
                           tableBody: TextStyle(
                             fontSize: 11,
@@ -3174,10 +3280,10 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                           tableHead: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                            color: isDark ? ExecutiveTheme.darkTableHeaderText : ExecutiveTheme.lightTableHeaderText,
                           ),
                           tableBorder: TableBorder.all(
-                            color: isDark ? const Color(0xFF475569) : Colors.grey.shade300,
+                            color: isDark ? ExecutiveTheme.darkTableBorder : ExecutiveTheme.lightTableBorder,
                             width: 1.0,
                           ),
                         ),
@@ -3248,14 +3354,7 @@ class _ShiftingGradientLineState extends State<ShiftingGradientLine>
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: const [
-                Color(0xFF3B82F6), // Blue
-                Color(0xFF8B5CF6), // Purple
-                Color(0xFFEC4899), // Pink
-                Color(0xFFF59E0B), // Amber
-                Color(0xFF10B981), // Emerald
-                Color(0xFF3B82F6), // Blue
-              ],
+              colors: ExecutiveTheme.loadingFluidColors,
               begin: Alignment(-1.0 + _controller.value * 2.0, 0.0),
               end: Alignment(1.0 + _controller.value * 2.0, 0.0),
               tileMode: TileMode.repeated,

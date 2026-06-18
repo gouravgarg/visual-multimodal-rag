@@ -8,6 +8,7 @@ import 'app_config.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
 import 'theme_provider.dart';
+import 'executive_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,54 +89,23 @@ class _TractorCatalogAppState extends State<TractorCatalogApp> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    const Color primaryColor = Color(0xFF1E3A8A);
 
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        primaryColor: primaryColor,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        cardTheme: const CardThemeData(
-          color: Colors.white,
-          elevation: 2,
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        primaryColor: const Color(0xFF3B82F6), // Slightly lighter blue for dark mode
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Tailwind Slate 900
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0F172A),
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        cardTheme: const CardThemeData(
-          color: Color(0xFF1E293B), // Tailwind Slate 800
-          elevation: 2,
-        ),
-      ),
+      theme: ExecutiveTheme.lightTheme,
+      darkTheme: ExecutiveTheme.darkTheme,
       themeMode: themeProvider.themeMode,
 
       // Multi-state routing tree resolution engine
       home: _isCheckingSession
-          ? const Scaffold(
+          ? Scaffold(
               body: Center(
-                child: CircularProgressIndicator(color: Color(0xFF1E3A8A)),
+                child: CircularProgressIndicator(
+                  color: themeProvider.isDarkMode
+                      ? ExecutiveTheme.darkPrimaryGold
+                      : ExecutiveTheme.lightPrimaryObsidian,
+                ),
               ),
             )
           : _isAuthenticated

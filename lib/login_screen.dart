@@ -4,6 +4,7 @@ import 'package:amplify_flutter/amplify_flutter.dart'; // 💡 Exposes AmplifyEx
 import 'app_config.dart';
 import 'auth_service.dart';
 import 'register_screen.dart'; // 💡 Imports our new registration screen file
+import 'executive_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -107,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -169,9 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ElevatedButton(
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark
-                            ? Theme.of(context).colorScheme.primary
-                            : const Color(0xFF1E3A8A),
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: isDark ? Colors.black : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -205,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'Create an Account Here',
                         style: TextStyle(
-                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                          color: isDark ? ExecutiveTheme.darkPrimaryGold : ExecutiveTheme.lightAccentGold,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
