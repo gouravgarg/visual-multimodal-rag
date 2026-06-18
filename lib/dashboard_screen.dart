@@ -13,6 +13,8 @@ import 'part_model.dart';
 import 'image_compressor.dart';
 import 'progressive_loading_widget.dart';
 import 'search_history_service.dart';
+import 'package:provider/provider.dart';
+import 'theme_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -786,11 +788,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       builder: (BuildContext sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
+            final bool isDark = Theme.of(context).brightness == Brightness.dark;
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
@@ -815,19 +818,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Row(
+                        Row(
                           children: [
                             Icon(
                               Icons.history_rounded,
-                              color: Color(0xFF1E3A8A),
+                              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
                               'Search History (3 Days)',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
                               ),
                             ),
                           ],
@@ -938,10 +941,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: const Color(0xFFE2E8F0),
+                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                   ),
                                 ),
                                 child: InkWell(
@@ -968,19 +971,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                     vertical: 4,
                                                   ),
                                               decoration: BoxDecoration(
-                                                color: const Color(
-                                                  0xFF1E3A8A,
-                                                ).withValues(alpha: 0.1),
+                                                color: isDark
+                                                    ? const Color(0xFF60A5FA).withValues(alpha: 0.15)
+                                                    : const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                                                 borderRadius:
                                                     BorderRadius.circular(8),
                                               ),
                                               child: Text(
                                                 item.kbModel?.toUpperCase() ??
                                                     'CATALOG',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF1E3A8A),
+                                                  color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                                                 ),
                                               ),
                                             ),
@@ -1000,10 +1003,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           item.query,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF0F172A),
+                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -1013,7 +1016,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: Colors.grey[600],
+                                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                                           ),
                                         ),
                                       ],
@@ -1375,20 +1378,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String envVal,
     DateTime currentDateTime,
   ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 340,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 20,
             spreadRadius: 1,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1405,16 +1409,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFF1F5F9),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0),
+                  width: 1.0,
+                ),
               ),
               alignment: Alignment.center,
-              child: const Text(
+              child: Text(
                 'SP',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                   letterSpacing: 1.0,
                 ),
               ),
@@ -1423,24 +1430,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               AppConfig.appName,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
                 letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Release Version ${AppConfig.appVersion}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF64748B),
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 24),
-            const Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
+            Divider(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+              thickness: 1.5,
+            ),
             const SizedBox(height: 16),
             if (showEnv) ...[
               Container(
@@ -1452,16 +1462,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: const Color(0xFF0F172A),
+                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F172A),
                     width: 1.0,
                   ),
                 ),
                 child: Text(
                   envVal.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
+                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF0F172A),
                     letterSpacing: 1.0,
                   ),
                 ),
@@ -1478,12 +1488,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Gourav Garg',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
             const SizedBox(height: 16),
@@ -1496,11 +1506,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0),
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
@@ -1508,13 +1520,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: Color(0xFF0F172A),
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                       size: 11,
                     ),
                   ],
@@ -1528,8 +1540,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: OutlinedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0F172A),
-                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+                  side: BorderSide(
+                    color: isDark ? const Color(0xFF475569) : const Color(0xFFE2E8F0),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1824,16 +1838,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Continued in Module 2...
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           AppConfig.appName,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         actions: [
+          PopupMenuButton<ThemeMode>(
+            icon: Icon(
+              isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+            ),
+            tooltip: 'Theme Settings',
+            onSelected: (ThemeMode mode) {
+              Provider.of<ThemeProvider>(context, listen: false).setThemeMode(mode);
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<ThemeMode>>[
+              const PopupMenuItem<ThemeMode>(
+                value: ThemeMode.light,
+                child: Row(
+                  children: [
+                    Icon(Icons.light_mode, size: 20),
+                    SizedBox(width: 8),
+                    Text('Light Theme'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<ThemeMode>(
+                value: ThemeMode.dark,
+                child: Row(
+                  children: [
+                    Icon(Icons.dark_mode, size: 20),
+                    SizedBox(width: 8),
+                    Text('Dark Theme'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<ThemeMode>(
+                value: ThemeMode.system,
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_brightness, size: 20),
+                    SizedBox(width: 8),
+                    Text('System Default'),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showAboutDialog,
@@ -1936,6 +1992,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Continued in Module 3...
   Widget _buildChatBubble(AgentResponse response) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final bool hasSubmittedFeedback = response.selectedFeedback != 0;
 
     return Column(
@@ -2183,17 +2240,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     selectable: true,
                     data: response.unifiedAnswer,
                     styleSheet: MarkdownStyleSheet(
-                      p: const TextStyle(
+                      p: TextStyle(
                         fontSize: 14,
                         height: 1.5,
-                        color: Colors.black87,
+                        color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
                       ),
-                      strong: const TextStyle(
+                      strong: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A),
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       ),
-                      listBullet: const TextStyle(
-                        color: Color(0xFF1E3A8A),
+                      listBullet: TextStyle(
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       ),
                     ),
                   ),
@@ -2341,14 +2398,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildInputBar() {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
+            ),
           ),
           child: SafeArea(
             child: Column(
@@ -2459,9 +2521,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.add_photo_alternate_outlined,
-                        color: Color(0xFF1E3A8A),
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       ),
                       tooltip: 'Attach photos (PNG, JPG, JPEG only)',
                       onPressed: _pickImages,
@@ -2473,14 +2535,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         keyboardType: TextInputType.multiline,
                         minLines: 1,
                         maxLines: 5,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           hintText: AppConfig.queryHintText,
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF1F5F9),
+                          fillColor: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
@@ -2491,9 +2559,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(width: 8),
                     CircleAvatar(
-                      backgroundColor: const Color(0xFF1E3A8A),
+                      backgroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                        icon: Icon(
+                          Icons.send,
+                          color: isDark ? Colors.black : Colors.white,
+                          size: 18,
+                        ),
                         onPressed: _submitAgentQuery,
                       ),
                     ),
@@ -2609,12 +2681,16 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
 
     final bool hasBody = cleanText.isNotEmpty;
 
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200, width: 1.0),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
+          width: 1.0,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2677,9 +2753,9 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                   Expanded(
                     child: Text(
                       '📄 $fileName',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: Colors.black54,
+                        color: isDark ? Colors.white70 : Colors.black54,
                         fontWeight: FontWeight.w500,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -2760,26 +2836,28 @@ class _ReferenceCardWidgetState extends State<ReferenceCardWidget> {
                         styleSheet: MarkdownStyleSheet(
                           p: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade800,
+                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
                             fontStyle: FontStyle.italic,
                             height: 1.4,
                           ),
-                          strong: const TextStyle(
+                          strong: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3A8A),
+                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                           ),
-                          listBullet: const TextStyle(color: Color(0xFF1E3A8A)),
+                          listBullet: TextStyle(
+                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                          ),
                           tableBody: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey.shade800,
+                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
                           ),
-                          tableHead: const TextStyle(
+                          tableHead: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3A8A),
+                            color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                           ),
                           tableBorder: TableBorder.all(
-                            color: Colors.grey.shade300,
+                            color: isDark ? const Color(0xFF475569) : Colors.grey.shade300,
                             width: 1.0,
                           ),
                         ),

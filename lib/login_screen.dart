@@ -80,8 +80,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: isDark
+          ? Theme.of(context).scaffoldBackgroundColor
+          : const Color(0xFFF5F7FA),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -98,13 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
+                    Text(
                       AppConfig.loginTitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A),
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -166,8 +169,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ElevatedButton(
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
-                        foregroundColor: Colors.white,
+                        backgroundColor: isDark
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF1E3A8A),
+                        foregroundColor: isDark ? Colors.black : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -197,10 +202,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                      child: const Text(
+                      child: Text(
                         'Create an Account Here',
                         style: TextStyle(
-                          color: Color(0xFF1E3A8A),
+                          color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),

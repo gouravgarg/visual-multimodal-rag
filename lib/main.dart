@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import 'package:provider/provider.dart';
 
 import 'amplifyconfiguration.dart';
 import 'app_config.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
+import 'theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,7 +15,12 @@ void main() async {
   // Initialize AWS Amplify services before app rendering mounts
   final bool isAwsConfigured = await _configureAmplify();
 
-  runApp(TractorCatalogApp(isCoreInitialized: isAwsConfigured));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: TractorCatalogApp(isCoreInitialized: isAwsConfigured),
+    ),
+  );
 }
 
 Future<bool> _configureAmplify() async {
@@ -80,14 +87,49 @@ class _TractorCatalogAppState extends State<TractorCatalogApp> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    const Color primaryColor = Color(0xFF1E3A8A);
+
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        primaryColor: const Color(0xFF1E3A8A),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E3A8A)),
+        primaryColor: primaryColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor,
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardTheme: const CardThemeData(
+          color: Colors.white,
+          elevation: 2,
+        ),
       ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        primaryColor: const Color(0xFF3B82F6), // Slightly lighter blue for dark mode
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor,
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0F172A), // Tailwind Slate 900
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0F172A),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF1E293B), // Tailwind Slate 800
+          elevation: 2,
+        ),
+      ),
+      themeMode: themeProvider.themeMode,
 
       // Multi-state routing tree resolution engine
       home: _isCheckingSession

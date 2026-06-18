@@ -88,12 +88,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Continued in Block 2 below...
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: isDark
+          ? Theme.of(context).scaffoldBackgroundColor
+          : const Color(0xFFF5F7FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: const Color(0xFF1E3A8A),
+        foregroundColor: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -116,10 +119,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ? 'Verify Your Account'
                           : 'Create Access Profile',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A),
+                        color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -149,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _isPasswordVisible
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              color: const Color(0xFF1E3A8A),
+                              color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                             ),
                             onPressed: () {
                               setState(() {
@@ -195,8 +198,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ElevatedButton(
                       onPressed: _isLoading ? null : _handleRegisterSubmission,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
-                        foregroundColor: Colors.white,
+                        backgroundColor: isDark
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF1E3A8A),
+                        foregroundColor: isDark ? Colors.black : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: _isLoading

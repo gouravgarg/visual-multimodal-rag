@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:myapp/main.dart';
 import 'package:myapp/app_config.dart';
+import 'package:myapp/theme_provider.dart';
 
 void main() {
   testWidgets('Login Screen renders correctly smoke test', (
     WidgetTester tester,
   ) async {
     // Build our app with isCoreInitialized as false to avoid active Cognito session checks
-    await tester.pumpWidget(const TractorCatalogApp(isCoreInitialized: false));
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ThemeProvider>(
+        create: (_) => ThemeProvider(),
+        child: const TractorCatalogApp(isCoreInitialized: false),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Verify that the login screen components are rendered
